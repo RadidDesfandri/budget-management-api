@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
@@ -70,6 +72,32 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
+        // Rate Limiting (429) - Terlalu banyak request
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too Many Requests',
+                    'data'    => null,
+                    'error'   => 'You have exceeded the rate limit.',
+                    'statusCode' => 429,
+                ], 429);
+            }
+        });
+
+        // Model Not Found (404) - findOrFail gagal
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Resource Not Found',
+                    'data'    => null,
+                    'error'   => 'The requested resource (ID) was not found.',
+                    'statusCode' => 404,
+                ], 404);
+            }
+        });
+
         // Handle Route Not Found (404)
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
             if ($request->is('api/*')) {
@@ -112,11 +140,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Handle Internal Server Error
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*')) {
+                $errorMessage = app()->isProduction()
+                    ? 'Something went wrong on the server.'
+                    : $e->getMessage();
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Internal Server Error',
                     'data' => null,
-                    'error' => $e->getMessage(),
+                    'error' => $errorMessage,
                     'statusCode' => 500,
                 ], 500);
             }
