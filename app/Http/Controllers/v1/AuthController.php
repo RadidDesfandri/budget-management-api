@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ForgotPasswordMail;
 use App\Mail\UserRegisteredMail;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
@@ -46,7 +48,10 @@ class AuthController extends Controller
             $parsedUrl = parse_url($verificationUrl);
             $queryString = $parsedUrl['query'];
 
-            $frontendUrl = config('app.frontend_url') . '/verify-email/' . $user->getKey() . '/' . sha1($user->getEmailForVerification()) . '?' . $queryString;
+            $frontendUrl = config('app.frontend_url') . '/verify-email/' 
+                . $user->getKey() . '/' 
+                . sha1($user->getEmailForVerification()) . '?'
+                . $queryString;
 
             Mail::to($user->email)->send(new UserRegisteredMail($user, $frontendUrl));
 
@@ -62,8 +67,10 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'password' => 'required|string|min:6',
+        ], [
+            'email.exists' => 'The provided email is not registered.',
         ]);
 
         $credentials = $request->only('email', 'password');
@@ -119,5 +126,54 @@ class AuthController extends Controller
         }
 
         return $this->successResponse('Email verified successfully', null, 200);
+    }
+
+    public function sendResetPasswordEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.exists' => 'The provided email is not registered.',
+        ]);
+
+        $user = $this->userRepository->findByEmail($request->email);
+
+        $resetUrl = URL::temporarySignedRoute(
+            'password.reset',
+            Carbon::now()->addMinutes(15),
+            [
+                'id' => $user->getKey(),
+                'hash' => sha1($user->email),
+            ]
+        );
+
+        $parsedUrl = parse_url($resetUrl);
+
+        $frontendUrl = config('app.frontend_url') . '/reset-password/'
+            . $user->id . '/'
+            . sha1($user->email) . '?'
+            . $parsedUrl['query'];
+
+        Mail::to($user->email)->send(new ForgotPasswordMail($user, $frontendUrl));
+
+        return $this->successResponse('Password reset email sent successfully', null, 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        $user = $this->userRepository->findOrFail($request->id);
+
+        if (!hash_equals((string) $request->route('hash'), sha1($user->email))) {
+            return $this->errorResponse('Invalid reset link', null, 403);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return $this->successResponse('Password reset successfully', null, 200);
     }
 }
