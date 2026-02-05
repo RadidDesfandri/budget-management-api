@@ -11,8 +11,12 @@ Route::group(['middleware' => 'throttle:api'], function () {
 
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login'])->name('login');
+    Route::post('forgot-password', [AuthController::class, 'sendResetPasswordEmail']);
     Route::get('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->name('verification.verify')
+        ->middleware(['signed']);
+    Route::post('reset-password/{id}/{hash}', [AuthController::class, 'resetPassword'])
+        ->name('password.reset')
         ->middleware(['signed']);
 
     Route::group(['middleware' => 'auth:api'], function () {
