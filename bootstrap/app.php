@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -7,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,25 +24,71 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Handle Not Found
+        // Handle Unauthenticated
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                    'data'    => null,
+                    'error'   => 'Unauthenticated or token missing.',
+                    'statusCode' => 401,
+                ], 401);
+            }
+        });
+
+        // Handle Token Expired (JWT)
+        $exceptions->render(function (TokenExpiredException $e, Request $request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Expired',
+                'data'    => null,
+                'error'   => 'Your token has expired, please login again.',
+                'statusCode' => 401,
+            ], 401);
+        });
+
+        // Handle Token Invalid (JWT)
+        $exceptions->render(function (TokenInvalidException $e, Request $request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Invalid',
+                'data'    => null,
+                'error'   => 'The token provided is invalid.',
+                'statusCode' => 401,
+            ], 401);
+        });
+
+        // Handle JWT Generic Exception
+        $exceptions->render(function (JWTException $e, Request $request) {
+            return response()->json([
+                'success' => false,
+                'message' => 'JWT Error',
+                'data'    => null,
+                'error'   => 'Could not parse token.',
+                'statusCode' => 401,
+            ], 401);
+        });
+
+        // Handle Route Not Found (404)
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Route not found.',
+                    'message' => 'Route not found',
                     'data'    => null,
-                    'error'   => 'Resource or endpoint not found',
+                    'error'   => 'Endpoint not found.',
                     'statusCode' => 404,
                 ], 404);
             }
         });
 
-        // Handle Method Not Allowed
+        // Handle Method Not Allowed (405)
         $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Method not allowed.',
+                    'message' => 'Method Not Allowed',
                     'data'    => null,
                     'error'   => $e->getMessage(),
                     'statusCode' => 405,
