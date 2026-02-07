@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -26,6 +24,8 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'avatar_url',
     ];
+
+    protected $appends = ['full_avatar_url'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -67,11 +67,12 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function createPasswordResetToken()
+    public function getFullAvatarUrlAttribute()
     {
-        return JWTAuth::customClaims([
-            'type' => 'password_reset',
-            'user_id' => $this->id,
-        ])->fromUser($this);
+        if ($this->avatar_url) {
+            return asset('storage/' . $this->avatar_url);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name);
     }
 }

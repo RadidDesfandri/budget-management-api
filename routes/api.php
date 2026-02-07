@@ -21,6 +21,10 @@ Route::group(['middleware' => 'throttle:api'], function () {
 
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
+        Route::put('edit-profile', [AuthController::class, 'editProfile']);
+        Route::put('change-avatar', [AuthController::class, 'changeAvatar']);
+        Route::delete('delete-account', [AuthController::class, 'deleteAccount']);
         Route::get('me', [AuthController::class, 'me']);
     });
 });
