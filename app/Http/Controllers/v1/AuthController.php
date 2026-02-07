@@ -286,6 +286,20 @@ class AuthController extends Controller
         return $this->successResponse('Avatar updated successfully', $user, 200);
     }
 
+    public function removeAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->avatar_url && Storage::disk('public')->exists($user->avatar_url)) {
+            Storage::disk('public')->delete($user->avatar_url);
+            $user->avatar_url = null;
+            $user->save();
+            return $this->successResponse('Avatar removed successfully', $user, 200);
+        }
+
+        return $this->errorResponse('No profile picture to delete', null, 404);
+    }
+
     public function deleteAccount(Request $request)
     {
         $user = $request->user();
