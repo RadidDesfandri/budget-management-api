@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 
 class AuthController extends Controller
@@ -48,8 +49,8 @@ class AuthController extends Controller
             $parsedUrl = parse_url($verificationUrl);
             $queryString = $parsedUrl['query'];
 
-            $frontendUrl = config('app.frontend_url') . '/verify-email/' 
-                . $user->getKey() . '/' 
+            $frontendUrl = config('app.frontend_url') . '/verify-email/'
+                . $user->getKey() . '/'
                 . sha1($user->getEmailForVerification()) . '?'
                 . $queryString;
 
@@ -118,7 +119,7 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return $this->errorResponse('Email already verified', null, 200);
+            return $this->errorResponse('Email already verified', null, 400);
         }
 
         if ($user->markEmailAsVerified()) {
@@ -135,6 +136,14 @@ class AuthController extends Controller
         ], [
             'email.exists' => 'The provided email is not registered.',
         ]);
+
+        // Key untuk Rate Limiter
+        $throttleKey = 'send-reset-password:' . $request->email;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return $this->errorResponse('Too many requests. Please try again in ' . $seconds . ' seconds.', null, 429);
+        }
 
         $user = $this->userRepository->findByEmail($request->email);
 
@@ -154,7 +163,10 @@ class AuthController extends Controller
             . sha1($user->email) . '?'
             . $parsedUrl['query'];
 
+        // Hitung percobaan (Hit) jika email berhasil terkirim
+        // Parameter kedua adalah waktu expire dalam detik (86400 detik = 24 jam)
         Mail::to($user->email)->send(new ForgotPasswordMail($user, $frontendUrl));
+        RateLimiter::hit($throttleKey, 86400);
 
         return $this->successResponse('Password reset email sent successfully', null, 200);
     }
@@ -171,8 +183,27 @@ class AuthController extends Controller
             return $this->errorResponse('Invalid reset link', null, 403);
         }
 
+        $resetLimitKey = 'password-changed:' . $user->id;
+        if (RateLimiter::tooManyAttempts($resetLimitKey, 1)) {
+            return $this->errorResponse('You can only reset your password once per week.', null, 429);
+        }
+
+        if ($user->password_changed_at && $user->password_changed_at->addWeek() > now()) {
+            return $this->errorResponse('You can only reset your password once per week.', null, 429);
+        }
+
+        if (Hash::check($request->password, $user->password)) {
+            return $this->errorResponse('New password cannot be the same as the old password.', null, 422);
+        }
+
         $user->password = Hash::make($request->password);
+        $user->password_changed_at = now();
         $user->save();
+
+        RateLimiter::hit($resetLimitKey, 604800);
+
+        // Clear Rate Limiter setelah password berhasil direset
+        RateLimiter::clear('send-reset-password:' . $user->email);
 
         return $this->successResponse('Password reset successfully', null, 200);
     }
