@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 class AuthController extends Controller
@@ -193,7 +194,9 @@ class AuthController extends Controller
         }
 
         if (Hash::check($request->password, $user->password)) {
-            return $this->errorResponse('New password cannot be the same as the old password.', null, 422);
+            return $this->errorResponse('New password cannot be the same as the old password.', [
+                'password' => 'New password cannot be the same as the old password.'
+            ], 422);
         }
 
         $user->password = Hash::make($request->password);
@@ -206,5 +209,89 @@ class AuthController extends Controller
         RateLimiter::clear('send-reset-password:' . $user->email);
 
         return $this->successResponse('Password reset successfully', null, 200);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string|min:6',
+            'new_password' => 'required|string|min:6',
+        ]);
+
+        $user = $request->user();
+
+        $changeLimiterKey = 'password-changed:' . $user->id;
+        if (RateLimiter::tooManyAttempts($changeLimiterKey, 1)) {
+            return $this->errorResponse('You can only change your password once per week.', null, 429);
+        }
+
+        if ($user->password_changed_at && $user->password_changed_at->addWeek() > now()) {
+            return $this->errorResponse('You can only change your password once per week.', null, 429);
+        }
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return $this->errorResponse('Current password is incorrect.', [
+                'current_password' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        if (Hash::check($request->new_password, $user->password)) {
+            return $this->errorResponse('New password cannot be the same as the old password.', [
+                'new_password' => 'New password cannot be the same as the old password.',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        RateLimiter::hit($changeLimiterKey, 604800);
+
+        return $this->successResponse('Password changed successfully', null, 200);
+    }
+
+    public function editProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $user = $request->user();
+
+        $user->name = $request->name;
+        $user->save();
+
+        return $this->successResponse('Profile updated successfully', $user, 200);
+    }
+
+    public function changeAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_url && Storage::disk('public')->exists($user->avatar_url)) {
+                Storage::disk('public')->delete($user->avatar_url);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            $user->avatar_url = $path;
+        }
+
+        $user->save();
+
+        return $this->successResponse('Avatar updated successfully', $user, 200);
+    }
+
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        $user->delete();
+
+        return $this->successResponse('Account deleted successfully', null, 200);
     }
 }
