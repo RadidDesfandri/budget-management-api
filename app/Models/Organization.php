@@ -14,10 +14,21 @@ class Organization extends Model
         'owner_id',
     ];
 
+    protected $appends = ['full_logo_url'];
+
     public function users()
     {
         return $this->belongsToMany(User::class)
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    public function getFullLogoUrlAttribute()
+    {
+        if ($this->logo_url) {
+            return asset('storage/' . $this->logo_url);
+        }
+
+        return null;
     }
 }

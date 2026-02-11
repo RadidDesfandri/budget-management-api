@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\v1\AuthController;
+use App\Http\Controllers\v1\OrganizationController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => 'throttle:api'], function () {
@@ -27,5 +28,9 @@ Route::group(['middleware' => 'throttle:api'], function () {
         Route::delete('remove-avatar', [AuthController::class, 'removeAvatar']);
         Route::delete('delete-account', [AuthController::class, 'deleteAccount']);
         Route::get('me', [AuthController::class, 'me']);
+
+        Route::prefix('organization')->group(function () {
+            Route::post('store', [OrganizationController::class, 'store']);
+        });
     });
 });
