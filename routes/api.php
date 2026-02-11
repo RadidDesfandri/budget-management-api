@@ -31,6 +31,12 @@ Route::group(['middleware' => 'throttle:api'], function () {
 
         Route::prefix('organization')->group(function () {
             Route::post('store', [OrganizationController::class, 'store']);
+
+            Route::middleware(['has.organization'])->group(function () {
+                Route::get('test', function () {
+                    return response()->json(['message' => 'Testing middleware!']);
+                });
+            });
         });
     });
 });

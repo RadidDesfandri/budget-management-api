@@ -18,9 +18,10 @@ class Organization extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot('role')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            User::class,
+            'organization_users'
+        )->withPivot('role')->withTimestamps();
     }
 
     public function getFullLogoUrlAttribute()
