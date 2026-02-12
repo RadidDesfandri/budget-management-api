@@ -106,7 +106,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user();
+        $user = $this->userRepository->find($request->user()->id);
 
         return $this->successResponse('User retrieved successfully', $user, 200);
     }

@@ -37,7 +37,7 @@ class UserRepository
 
     public function find($id)
     {
-        return User::find($id);
+        return User::with('organizations:id,name')->find($id);
     }
 
     public function findOrFail($id)
