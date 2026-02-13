@@ -33,8 +33,10 @@ Route::group(['middleware' => 'throttle:api'], function () {
             Route::post('store', [OrganizationController::class, 'store']);
 
             Route::middleware(['has.organization'])->group(function () {
-                Route::get('test', function () {
-                    return response()->json(['message' => 'Testing middleware!']);
+                Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
+
+                Route::middleware(['org.access'])->group(function () {
+                    Route::post('set-active', [OrganizationController::class, 'setActiveOrganization']);
                 });
             });
         });

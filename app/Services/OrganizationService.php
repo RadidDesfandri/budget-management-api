@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Helpers\OrganizationHelper;
 use App\Repositories\OrganizationRepository;
 use App\Repositories\OrganizationUserRepository;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class OrganizationService
 {
@@ -43,5 +43,40 @@ class OrganizationService
 
             return $organization->refresh();
         });
+    }
+
+    public function orgDropdownOptions($user)
+    {
+        $organizations = $user->organizations;
+        $activeOrgId = OrganizationHelper::getOrganizationId();
+
+        $organizations = $organizations->filter(function ($organization) use ($activeOrgId) {
+            return $organization->id != $activeOrgId;
+        })
+            ->map(function ($organization) {
+                return [
+                    'id' => $organization->id,
+                    'text' => ucwords($organization->name),
+                    'full_logo_url' => $organization->full_logo_url
+                ];
+            })->values();
+
+        $activeOrgInfo = $user->organizations()->where('organizations.id', $activeOrgId)->first();
+
+        if ($activeOrgInfo) {
+            $activeOrgInfo = [
+                'id' => $activeOrgInfo->id,
+                'text' => ucwords($activeOrgInfo->name),
+                'full_logo_url' => $activeOrgInfo->full_logo_url
+            ];
+        }
+
+        return [
+            'meta' => [
+                'active_organization_id' => $activeOrgId,
+                'active_organization_info' => $activeOrgInfo,
+            ],
+            'organizations' => $organizations
+        ];
     }
 }
