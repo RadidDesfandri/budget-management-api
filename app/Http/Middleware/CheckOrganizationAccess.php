@@ -2,13 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Helpers\OrganizationHelper;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureUserHasOrganization
+class CheckOrganizationAccess
 {
     /**
      * Handle an incoming request.
@@ -17,23 +15,25 @@ class EnsureUserHasOrganization
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = Auth::user();
+        $orgId = $request->input('organization_id') ?? $request->route('organization_id');
 
-        if ($user->organizations()->count() === 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no organization',
-                'data'    => null,
-                'error'   => 'NO_ORGANIZATION',
-                'statusCode' => 403,
-            ], 403);
+        if (!$orgId) {
+            return $next($request);
         }
 
-        $activeId = OrganizationHelper::getOrganizationId();
+        $hasAccess = $request->user()
+            ->organizations()
+            ->where('organizations.id', $orgId)
+            ->exists();
 
-        if (!$activeId) {
-            $activeId = $user->organizations()->first()->id;
-            OrganizationHelper::setOrganizationId($activeId);
+        if (!$hasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: You do not belong to this organization.',
+                'data'    => null,
+                'error'   => 'UNAUTHORIZED',
+                'statusCode' => 403,
+            ], 403);
         }
 
         return $next($request);

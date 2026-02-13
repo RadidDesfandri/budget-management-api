@@ -2,17 +2,34 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Facades\Auth;
+
 class OrganizationHelper
 {
-    public const ORGANIZATION_ID = 'organization:current_id';
-
+    /**
+     * Mengambil ID organisasi aktif dari user yang sedang login.
+     */
     public static function getOrganizationId()
     {
-        return session()->get(self::ORGANIZATION_ID);
+        $user = Auth::user();
+
+        if (!$user) {
+            return null;
+        }
+
+        return $user->current_organization_id;
     }
 
+    /**
+     * Menyimpan ID organisasi aktif ke database user.
+     */
     public static function setOrganizationId($organizationId)
     {
-        session()->put(self::ORGANIZATION_ID, $organizationId);
+        $user = Auth::user();
+
+        if ($user) {
+            $user->current_organization_id = $organizationId;
+            $user->save();
+        }
     }
 }

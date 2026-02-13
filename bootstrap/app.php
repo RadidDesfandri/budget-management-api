@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'has.organization' => App\Http\Middleware\EnsureUserHasOrganization::class,
+            'org.access' => App\Http\Middleware\CheckOrganizationAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
