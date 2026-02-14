@@ -41,6 +41,17 @@ class OrganizationService
                 'joined_at' => now(),
             ]);
 
+            if (!empty($data['member_ids'])) {
+                foreach ($data['member_ids'] as $memberId) {
+                    $this->organizationUserRepo->addUser([
+                        'organization_id' => $organization->id,
+                        'user_id' => $memberId,
+                        'role' => 'member',
+                        'joined_at' => now(),
+                    ]);
+                }
+            }
+
             return $organization->refresh();
         });
     }
