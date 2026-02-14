@@ -34,6 +34,7 @@ Route::group(['middleware' => 'throttle:api'], function () {
 
             Route::middleware(['has.organization'])->group(function () {
                 Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
+                Route::get('member-list', [OrganizationController::class, 'memberList']);
 
                 Route::middleware(['org.access'])->group(function () {
                     Route::post('set-active', [OrganizationController::class, 'setActiveOrganization']);

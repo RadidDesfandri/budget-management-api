@@ -20,4 +20,11 @@ class OrganizationUserRepository
     {
         return OrganizationUser::create($data);
     }
+
+    public function memberList($user)
+    {
+        return OrganizationUser::with('user:id,name,email')
+            ->where('organization_id', $user->current_organization_id)
+            ->get();
+    }
 }

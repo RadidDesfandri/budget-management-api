@@ -51,4 +51,11 @@ class OrganizationController extends Controller
 
         return $this->successResponse('Organization set successfully', null, 200);
     }
+
+    public function memberList(Request $request)
+    {
+        $data = app(OrganizationService::class)->memberList($request->user());
+
+        return $this->successResponse('Member list', $data, 200);
+    }
 }

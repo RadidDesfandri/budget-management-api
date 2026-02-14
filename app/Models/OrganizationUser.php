@@ -14,4 +14,9 @@ class OrganizationUser extends Model
         'role',
         'joined_at',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
