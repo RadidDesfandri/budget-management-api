@@ -90,4 +90,19 @@ class OrganizationService
             'organizations' => $organizations
         ];
     }
+
+    public function memberList($user)
+    {
+        $membersData = $this->organizationUserRepo->memberList($user);
+        $totalMember = $membersData->count();
+        $totalFinance = $membersData->where('role', 'finance')->count();
+
+        $data = [
+            'total_member' => $totalMember,
+            'total_finance' => $totalFinance,
+            'members' => $membersData,
+        ];
+
+        return $data;
+    }
 }
