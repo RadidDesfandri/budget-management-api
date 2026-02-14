@@ -91,16 +91,20 @@ class OrganizationService
         ];
     }
 
-    public function memberList($user)
+    public function memberList($user, array $filters)
     {
-        $membersData = $this->organizationUserRepo->memberList($user);
-        $totalMember = $membersData->count();
-        $totalFinance = $membersData->where('role', 'finance')->count();
+        $totalMember = $this->organizationUserRepo->countMembers($user->current_organization_id);
+        $totalAdmins = $this->organizationUserRepo->countMembers($user->current_organization_id, 'admin');
+
+        $paginatedMembers = $this->organizationUserRepo->getPaginatedMemberList($user, $filters);
 
         $data = [
-            'total_member' => $totalMember,
-            'total_finance' => $totalFinance,
-            'members' => $membersData,
+            'stats' => [
+                'total_members'   => $totalMember,
+                'total_admins'    => $totalAdmins,
+                'pending_invites' => 0, // change real data
+            ],
+            'members' => $paginatedMembers,
         ];
 
         return $data;
