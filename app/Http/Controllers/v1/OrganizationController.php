@@ -54,7 +54,14 @@ class OrganizationController extends Controller
 
     public function memberList(Request $request)
     {
-        $data = app(OrganizationService::class)->memberList($request->user());
+        $filters = [
+            'search'    => $request->input('search'),
+            'sort_by'   => $request->input('sort_by', 'joined_at'),
+            'order_by'  => $request->input('order_by', 'desc'),
+            'page_size' => $request->input('page_size', 10),
+        ];
+
+        $data = app(OrganizationService::class)->memberList($request->user(), $filters);
 
         return $this->successResponse('Member list', $data, 200);
     }

@@ -21,10 +21,52 @@ class OrganizationUserRepository
         return OrganizationUser::create($data);
     }
 
-    public function memberList($user)
+    public function getPaginatedMemberList($user, array $filters)
     {
-        return OrganizationUser::with('user:id,name,email')
-            ->where('organization_id', $user->current_organization_id)
-            ->get();
+        $query = OrganizationUser::query()
+            ->select('organization_users.*')
+            ->join('users', 'organization_users.user_id', '=', 'users.id')
+            ->where('organization_users.organization_id', $user->current_organization_id)
+            ->with('user:id,name,email,avatar_url');
+
+        if (!empty($filters['search'])) {
+            $searchTerm = '%' . $filters['search'] . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('users.name', 'LIKE', $searchTerm)
+                    ->orWhere('users.email', 'LIKE', $searchTerm);
+            });
+        }
+
+        $sortBy = $filters['sort_by'];
+        $orderBy = $filters['order_by'];
+
+        switch ($sortBy) {
+            case 'name':
+            case 'user':
+                $query->orderBy('users.name', $orderBy);
+                break;
+            case 'email':
+                $query->orderBy('users.email', $orderBy);
+                break;
+            case 'role':
+                $query->orderBy('organization_users.role', $orderBy);
+                break;
+            default:
+                $query->orderBy('organization_users.joined_at', $orderBy);
+                break;
+        }
+
+        return $query->paginate($filters['page_size']);
+    }
+
+    public function countMembers($organizationId, $role = null)
+    {
+        $query = OrganizationUser::where('organization_id', $organizationId);
+
+        if ($role) {
+            $query->where('role', $role);
+        }
+
+        return $query->count();
     }
 }
