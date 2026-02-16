@@ -69,4 +69,9 @@ class OrganizationUserRepository
 
         return $query->count();
     }
+
+    public function model()
+    {
+        return OrganizationUser::class;
+    }
 }
