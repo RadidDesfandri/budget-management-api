@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\v1\AuthController;
+use App\Http\Controllers\v1\InvitationController;
 use App\Http\Controllers\v1\OrganizationController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,12 @@ Route::group(['middleware' => 'throttle:api'], function () {
 
                     Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
                     Route::get('member-list', [OrganizationController::class, 'memberList']);
+
+                    Route::prefix('invitation')
+                        ->middleware(['org.role:owner,admin'])
+                        ->group(function () {
+                            Route::post('create', [InvitationController::class, 'createInvitation']);
+                        });
                 });
         });
     });
