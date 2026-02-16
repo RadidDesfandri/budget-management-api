@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Helpers\OrganizationHelper;
+use App\Models\OrganizationUser;
 use App\Repositories\OrganizationRepository;
 use App\Repositories\OrganizationUserRepository;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class OrganizationService
             $this->organizationUserRepo->addUser([
                 'organization_id' => $organization->id,
                 'user_id' => $userId,
-                'role' => 'owner',
+                'role' => OrganizationUser::ROLE_OWNER,
                 'joined_at' => now(),
             ]);
 
