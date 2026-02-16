@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class OrganizationController extends Controller
 {
+    public function show(Request $request)
+    {
+        $orgId = app('active_organization_id');
+        $organization = app(OrganizationService::class)->detail($orgId);
+
+        return $this->successResponse('Organization details', $organization, 200);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

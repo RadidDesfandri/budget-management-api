@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Organization;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,6 +26,18 @@ class EnsureUserHasOrganization
                 'error'   => 'MISSING_ORG_ID',
                 'statusCode' => 400,
             ], 400);
+        }
+
+        $organization = Organization::find($orgId);
+
+        if (!$organization) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization not found.',
+                'data'    => null,
+                'error'   => 'NOT_FOUND',
+                'statusCode' => 404,
+            ], 404);
         }
 
         $hasAccess = $request->user()

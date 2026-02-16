@@ -16,6 +16,11 @@ class OrganizationService
 
     ) {}
 
+    public function detail($organizationId)
+    {
+        return $this->organizationRepo->find($organizationId);
+    }
+
     public function createOrganization(int $userId, array $data)
     {
         return DB::transaction(function () use ($userId, $data) {

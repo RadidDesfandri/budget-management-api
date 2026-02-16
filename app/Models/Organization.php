@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Organization extends Model
 {
@@ -14,7 +15,7 @@ class Organization extends Model
         'owner_id',
     ];
 
-    protected $appends = ['full_logo_url'];
+    protected $appends = ['full_logo_url', 'current_user_role'];
 
     public function users()
     {
@@ -31,5 +32,18 @@ class Organization extends Model
         }
 
         return null;
+    }
+
+    public function getCurrentUserRoleAttribute()
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+
+        $userOrg = $this->users()
+            ->where('user_id', Auth::id())
+            ->first();
+
+        return $userOrg ? $userOrg->pivot->role : null;
     }
 }
