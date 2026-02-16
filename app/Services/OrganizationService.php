@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Helpers\OrganizationHelper;
 use App\Models\OrganizationUser;
 use App\Repositories\OrganizationRepository;
 use App\Repositories\OrganizationUserRepository;
@@ -46,10 +45,9 @@ class OrganizationService
         });
     }
 
-    public function orgDropdownOptions($user)
+    public function orgDropdownOptions($user, $activeOrgId)
     {
         $organizations = $user->organizations;
-        $activeOrgId = OrganizationHelper::getOrganizationId();
 
         $organizations = $organizations->filter(function ($organization) use ($activeOrgId) {
             return $organization->id != $activeOrgId;
@@ -81,12 +79,12 @@ class OrganizationService
         ];
     }
 
-    public function memberList($user, array $filters)
+    public function memberList($user, array $filters, $organizationId)
     {
-        $totalMember = $this->organizationUserRepo->countMembers($user->current_organization_id);
-        $totalAdmins = $this->organizationUserRepo->countMembers($user->current_organization_id, 'admin');
+        $totalMember = $this->organizationUserRepo->countMembers($organizationId);
+        $totalAdmins = $this->organizationUserRepo->countMembers($organizationId, 'admin');
 
-        $paginatedMembers = $this->organizationUserRepo->getPaginatedMemberList($user, $filters);
+        $paginatedMembers = $this->organizationUserRepo->getPaginatedMemberList($user, $filters, $organizationId);
 
         $data = [
             'stats' => [

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\v1;
 
-use App\Helpers\OrganizationHelper;
 use App\Http\Controllers\Controller;
 use App\Services\OrganizationService;
 use Illuminate\Http\Request;
@@ -22,27 +21,14 @@ class OrganizationController extends Controller
         return $this->successResponse('Organization created successfully', $organization, 200);
     }
 
-    public function orgDropdownOptions(Request $request)
+    public function orgDropdownOptions(Request $request, $organization_id)
     {
-        $data = app(OrganizationService::class)->orgDropdownOptions($request->user());
+        $data = app(OrganizationService::class)->orgDropdownOptions($request->user(), $organization_id);
 
         return $this->successResponse('Organization dropdown options', $data, 200);
     }
 
-    public function setActiveOrganization(Request $request)
-    {
-        $validate = $request->validate([
-            'organization_id' => 'required|exists:organizations,id',
-        ], [
-            'organization_id.exists' => 'The provided organization does not exist.',
-        ]);
-
-        OrganizationHelper::setOrganizationId($validate['organization_id']);
-
-        return $this->successResponse('Organization set successfully', null, 200);
-    }
-
-    public function memberList(Request $request)
+    public function memberList(Request $request, $organization_id)
     {
         $filters = [
             'search'    => $request->input('search'),
@@ -51,7 +37,7 @@ class OrganizationController extends Controller
             'page_size' => $request->input('page_size', 10),
         ];
 
-        $data = app(OrganizationService::class)->memberList($request->user(), $filters);
+        $data = app(OrganizationService::class)->memberList($request->user(), $filters, $organization_id);
 
         return $this->successResponse('Member list', $data, 200);
     }

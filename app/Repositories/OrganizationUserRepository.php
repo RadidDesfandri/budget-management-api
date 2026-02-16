@@ -21,12 +21,12 @@ class OrganizationUserRepository
         return OrganizationUser::create($data);
     }
 
-    public function getPaginatedMemberList($user, array $filters)
+    public function getPaginatedMemberList($user, array $filters, $organizationId)
     {
         $query = OrganizationUser::query()
             ->select('organization_users.*')
             ->join('users', 'organization_users.user_id', '=', 'users.id')
-            ->where('organization_users.organization_id', $user->current_organization_id)
+            ->where('organization_users.organization_id', $organizationId)
             ->with('user:id,name,email,avatar_url');
 
         if (!empty($filters['search'])) {
