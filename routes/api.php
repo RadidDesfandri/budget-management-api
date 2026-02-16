@@ -35,6 +35,8 @@ Route::group(['middleware' => 'throttle:api'], function () {
             Route::prefix('{organization_id}')
                 ->middleware(['org.access'])
                 ->group(function () {
+                    Route::get('/', [OrganizationController::class, 'show']);
+
                     Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
                     Route::get('member-list', [OrganizationController::class, 'memberList']);
                 });
