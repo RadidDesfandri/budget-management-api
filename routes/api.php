@@ -29,17 +29,15 @@ Route::group(['middleware' => 'throttle:api'], function () {
         Route::delete('delete-account', [AuthController::class, 'deleteAccount']);
         Route::get('me', [AuthController::class, 'me']);
 
-        Route::prefix('organization')->group(function () {
+        Route::prefix('org')->group(function () {
             Route::post('store', [OrganizationController::class, 'store']);
 
-            Route::middleware(['has.organization'])->group(function () {
-                Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
-                Route::get('member-list', [OrganizationController::class, 'memberList']);
-
-                Route::middleware(['org.access'])->group(function () {
-                    Route::post('set-active', [OrganizationController::class, 'setActiveOrganization']);
+            Route::prefix('{organization_id}')
+                ->middleware(['org.access'])
+                ->group(function () {
+                    Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
+                    Route::get('member-list', [OrganizationController::class, 'memberList']);
                 });
-            });
         });
     });
 });

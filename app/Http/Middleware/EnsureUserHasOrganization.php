@@ -2,10 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Helpers\OrganizationHelper;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserHasOrganization
@@ -17,24 +15,34 @@ class EnsureUserHasOrganization
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = Auth::user();
+        $orgId = $request->route('organization_id');
 
-        if ($user->organizations()->count() === 0) {
+        if (!$orgId) {
             return response()->json([
                 'success' => false,
-                'message' => 'User has no organization',
+                'message' => 'Organization ID is missing in URL.',
                 'data'    => null,
-                'error'   => 'NO_ORGANIZATION',
+                'error'   => 'MISSING_ORG_ID',
+                'statusCode' => 400,
+            ], 400);
+        }
+
+        $hasAccess = $request->user()
+            ->organizations()
+            ->where('organizations.id', $orgId)
+            ->exists();
+
+        if (!$hasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Access to Organization',
+                'data'    => null,
+                'error'   => 'UNAUTHORIZED',
                 'statusCode' => 403,
             ], 403);
         }
 
-        $activeId = OrganizationHelper::getOrganizationId();
-
-        if (!$activeId) {
-            $activeId = $user->organizations()->first()->id;
-            OrganizationHelper::setOrganizationId($activeId);
-        }
+        app()->instance('active_organization_id', $orgId);
 
         return $next($request);
     }
