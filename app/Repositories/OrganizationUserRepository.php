@@ -70,8 +70,17 @@ class OrganizationUserRepository
         return $query->count();
     }
 
-    public function model()
+    public function isMember(string $email, $organizationId): bool
     {
-        return OrganizationUser::class;
+        return OrganizationUser::whereHas('user', function ($query) use ($email) {
+            $query->where('email', $email);
+        })->where('organization_id', $organizationId)->exists();
+    }
+
+    public function isMemberByUserId($userId, $organizationId)
+    {
+        return OrganizationUser::where('user_id', $userId)
+            ->where('organization_id', $organizationId)
+            ->exists();
     }
 }

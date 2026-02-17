@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
-use App\Mail\InvitationMail;
 use App\Services\InvitationService;
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 class InvitationController extends Controller
 {
+    public function __construct(
+        protected InvitationService $invitationService
+    ) {}
+
     public function createInvitation(Request $request, $organizationId)
     {
         $request->validate([
@@ -18,34 +20,90 @@ class InvitationController extends Controller
             'role' => 'required|string|in:admin,member,finance',
         ]);
 
-        DB::beginTransaction();
+        try {
+            $invitation = $this->invitationService->createInvitation(
+                $request->all(),
+                $organizationId,
+                $request->user()
+            );
+
+            return $this->successResponse(
+                'Invitation created successfully',
+                $invitation,
+                201
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
+    public function verifyTokenInvitation(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
 
         try {
-            $existingMember = app(InvitationService::class)->ensureEmailNotMember($request->email, $organizationId);
+            $data = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+                $request->user()->email
+            );
 
-            if ($existingMember) {
-                DB::rollBack();
-                return $this->errorResponse('User with this email is already a member of this organization', null, 400);
-            }
+            return $this->successResponse('Token invitation verified.', $data, 200);
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
 
-            $activeInvitation = app(InvitationService::class)->ensureNoActiveInvitation($request->email, $organizationId);
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
 
-            if ($activeInvitation) {
-                DB::rollBack();
-                return $this->errorResponse('An active invitation already exists for this email', null, 400);
-            }
+    public function acceptInvitation(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
 
-            $invitation = app(InvitationService::class)->createInvitation($request->all(), $organizationId);
+        try {
+            $invitation = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+                $request->user()->email
+            );
 
-            $organization = $request->user()->organizations()->where('organizations.id', $organizationId)->first();
+            $this->invitationService->acceptInvitation($invitation, $request->user()->id);
 
-            Mail::to($request->email)->send(new InvitationMail($invitation, $organization));
+            return $this->successResponse('Invitation accepted successfully.', null, 200);
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
 
-            DB::commit();
-            return $this->successResponse('Invitation created successfully, and email sent to ' . $request->email, $invitation, 200);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return $this->errorResponse('Failed to create invitation', $e->getMessage(), 500);
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
+    public function rejectInvitation(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        try {
+            $invitation = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+                $request->user()->email
+            );
+
+            $this->invitationService->rejectInvitation($invitation, $request->user()->id);
+
+            return $this->successResponse('Invitation rejected successfully.', null, 200);
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
     }
 }

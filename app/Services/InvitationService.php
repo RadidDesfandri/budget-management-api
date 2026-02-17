@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Mail\InvitationMail;
 use App\Repositories\InvitationRepository;
 use App\Repositories\OrganizationUserRepository;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
+use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class InvitationService
@@ -15,39 +18,106 @@ class InvitationService
         protected OrganizationUserRepository $organizationUserRepo
     ) {}
 
-    public function createInvitation(array $data, $organizationId)
+    public function createInvitation(array $data, $organizationId, $user)
     {
-        $email = $data['email'];
-        $role = $data['role'];
+        if ($this->organizationUserRepo->isMember($data['email'], $organizationId)) {
+            throw new Exception('User with this email is already a member.', 400);
+        }
 
-        $token = Str::random(64);
+        if ($this->invitationRepo->hasActiveInvitation($data['email'], $organizationId)) {
+            throw new Exception('An active invitation already exists for this email.', 400);
+        }
 
-        $invitation = $this->invitationRepo->create([
-            'email' => $email,
-            'role' => $role,
-            'organization_id' => $organizationId,
-            'token' => $token,
-            'invited_by' => Auth::id(),
-            'expires_at' => Carbon::now()->addDays(7),
-        ]);
+        return DB::transaction(function () use ($data, $organizationId, $user) {
+            $token = Str::random(64);
+
+            $invitation = $this->invitationRepo->create([
+                'email' => $data['email'],
+                'role' => $data['role'],
+                'organization_id' => $organizationId,
+                'token' => $token,
+                'invited_by' => $user->id,
+                'expires_at' => Carbon::now()->addDays(7),
+            ]);
+
+            $organization = $user->organizations()->where('organizations.id', $organizationId)->first();
+            $frontendUrl = config('app.frontend_url') . '/invitation/accept?token=' . $token;
+
+            Mail::to($data['email'])->send(new InvitationMail($invitation, $organization, $frontendUrl));
+
+            return $invitation;
+        });
+    }
+
+    public function verifyTokenInvitation(string $token, $currentUserEmail)
+    {
+        $invitation = $this->invitationRepo->findByToken($token);
+
+        if (!$invitation) {
+            throw new Exception('This invitation does not exist', 404);
+        }
+
+        if ($invitation->accepted_at) {
+            throw new Exception('This invitation has already been accepted', 400);
+        }
+
+        if ($invitation->rejected_at) {
+            throw new Exception('This invitation has already been rejected', 400);
+        }
+
+        if ($invitation->email !== $currentUserEmail) {
+            throw new Exception('This invitation is not for your email address', 403);
+        }
+
+        if (Carbon::now()->greaterThan($invitation->expires_at)) {
+            throw new Exception('This invitation has expired', 400);
+        }
 
         return $invitation;
     }
 
-    public function ensureEmailNotMember($email, $organizationId)
+    public function acceptInvitation($invitation, $userId)
     {
-        return $this->organizationUserRepo->model()::whereHas('user', function ($query) use ($email) {
-            $query->where('email', $email);
-        })->where('organization_id', $organizationId)->exists();
+        return DB::transaction(function () use ($invitation, $userId) {
+            $isMember = $this->organizationUserRepo->isMemberByUserId($userId, $invitation->organization_id);
+
+            if ($isMember) {
+                $this->invitationRepo->update($invitation, [
+                    'accepted_at' => Carbon::now()
+                ]);
+
+                return $invitation;
+            }
+
+            $this->invitationRepo->update($invitation, [
+                'accepted_at' => Carbon::now()
+            ]);
+
+            $this->organizationUserRepo->addUser([
+                'organization_id' => $invitation->organization_id,
+                'user_id' => $userId,
+                'role' => $invitation->role,
+                'joined_at' => Carbon::now(),
+            ]);
+
+            return $invitation;
+        });
     }
 
-    public function ensureNoActiveInvitation($email, $organizationId)
+    public function rejectInvitation($invitation, $userId)
     {
-        return $this->invitationRepo->model()::where('email', $email)
-            ->where('organization_id', $organizationId)
-            ->whereNull('accepted_at')
-            ->whereNull('rejected_at')
-            ->where('expires_at', '>', Carbon::now())
-            ->exists();
+        return DB::transaction(function () use ($invitation, $userId) {
+            $isMember = $this->organizationUserRepo->isMemberByUserId($userId, $invitation->organization_id);
+
+            if ($isMember) {
+                throw new Exception('You are already a member of this organization', 400);
+            }
+
+            $this->invitationRepo->update($invitation, [
+                'rejected_at' => Carbon::now()
+            ]);
+
+            return $invitation;
+        });
     }
 }

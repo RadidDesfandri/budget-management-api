@@ -41,12 +41,14 @@ Route::group(['middleware' => 'throttle:api'], function () {
                     Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
                     Route::get('member-list', [OrganizationController::class, 'memberList']);
 
-                    Route::prefix('invitation')
-                        ->middleware(['org.role:owner,admin'])
-                        ->group(function () {
-                            Route::post('create', [InvitationController::class, 'createInvitation']);
-                        });
+                    Route::post('invitation/create', [InvitationController::class, 'createInvitation'])->middleware(['org.access', 'org.role:owner,admin']);
                 });
+        });
+
+        Route::prefix('org/invitation')->group(function () {
+            Route::get('verify', [InvitationController::class, 'verifyTokenInvitation']);
+            Route::post('accept', [InvitationController::class, 'acceptInvitation']);
+            Route::post('reject', [InvitationController::class, 'rejectInvitation']);
         });
     });
 });
