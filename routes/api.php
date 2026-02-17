@@ -21,6 +21,8 @@ Route::group(['middleware' => 'throttle:api'], function () {
         ->name('password.reset')
         ->middleware(['signed']);
 
+    Route::get('org/invitation/verify', [InvitationController::class, 'verifyTokenInvitation']);
+
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
@@ -46,7 +48,6 @@ Route::group(['middleware' => 'throttle:api'], function () {
         });
 
         Route::prefix('org/invitation')->group(function () {
-            Route::get('verify', [InvitationController::class, 'verifyTokenInvitation']);
             Route::post('accept', [InvitationController::class, 'acceptInvitation']);
             Route::post('reject', [InvitationController::class, 'rejectInvitation']);
         });

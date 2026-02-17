@@ -49,7 +49,7 @@ class InvitationService
         });
     }
 
-    public function verifyTokenInvitation(string $token, $currentUserEmail)
+    public function verifyTokenInvitation(string $token)
     {
         $invitation = $this->invitationRepo->findByToken($token);
 
@@ -65,10 +65,6 @@ class InvitationService
             throw new Exception('This invitation has already been rejected', 400);
         }
 
-        if ($invitation->email !== $currentUserEmail) {
-            throw new Exception('This invitation is not for your email address', 403);
-        }
-
         if (Carbon::now()->greaterThan($invitation->expires_at)) {
             throw new Exception('This invitation has expired', 400);
         }
@@ -76,10 +72,14 @@ class InvitationService
         return $invitation;
     }
 
-    public function acceptInvitation($invitation, $userId)
+    public function acceptInvitation($invitation, $user)
     {
-        return DB::transaction(function () use ($invitation, $userId) {
-            $isMember = $this->organizationUserRepo->isMemberByUserId($userId, $invitation->organization_id);
+        return DB::transaction(function () use ($invitation, $user) {
+            if ($invitation->email !== $user->email) {
+                throw new Exception('This invitation is not for your email address', 403);
+            }
+
+            $isMember = $this->organizationUserRepo->isMemberByUserId($user->id, $invitation->organization_id);
 
             if ($isMember) {
                 $this->invitationRepo->update($invitation, [
@@ -95,7 +95,7 @@ class InvitationService
 
             $this->organizationUserRepo->addUser([
                 'organization_id' => $invitation->organization_id,
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'role' => $invitation->role,
                 'joined_at' => Carbon::now(),
             ]);
@@ -104,10 +104,14 @@ class InvitationService
         });
     }
 
-    public function rejectInvitation($invitation, $userId)
+    public function rejectInvitation($invitation, $user)
     {
-        return DB::transaction(function () use ($invitation, $userId) {
-            $isMember = $this->organizationUserRepo->isMemberByUserId($userId, $invitation->organization_id);
+        return DB::transaction(function () use ($invitation, $user) {
+            if ($invitation->email !== $user->email) {
+                throw new Exception('This invitation is not for your email address', 403);
+            }
+
+            $isMember = $this->organizationUserRepo->isMemberByUserId($user->id, $invitation->organization_id);
 
             if ($isMember) {
                 throw new Exception('You are already a member of this organization', 400);

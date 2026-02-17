@@ -47,10 +47,7 @@ class InvitationController extends Controller
         ]);
 
         try {
-            $data = $this->invitationService->verifyTokenInvitation(
-                $request->token,
-                $request->user()->email
-            );
+            $data = $this->invitationService->verifyTokenInvitation($request->token);
 
             return $this->successResponse('Token invitation verified.', $data, 200);
         } catch (Exception $e) {
@@ -68,12 +65,9 @@ class InvitationController extends Controller
         ]);
 
         try {
-            $invitation = $this->invitationService->verifyTokenInvitation(
-                $request->token,
-                $request->user()->email
-            );
+            $invitation = $this->invitationService->verifyTokenInvitation($request->token);
 
-            $this->invitationService->acceptInvitation($invitation, $request->user()->id);
+            $this->invitationService->acceptInvitation($invitation, $request->user());
 
             return $this->successResponse('Invitation accepted successfully.', null, 200);
         } catch (Exception $e) {
@@ -91,12 +85,9 @@ class InvitationController extends Controller
         ]);
 
         try {
-            $invitation = $this->invitationService->verifyTokenInvitation(
-                $request->token,
-                $request->user()->email
-            );
+            $invitation = $this->invitationService->verifyTokenInvitation($request->token);
 
-            $this->invitationService->rejectInvitation($invitation, $request->user()->id);
+            $this->invitationService->rejectInvitation($invitation, $request->user());
 
             return $this->successResponse('Invitation rejected successfully.', null, 200);
         } catch (Exception $e) {
