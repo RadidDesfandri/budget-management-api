@@ -24,4 +24,9 @@ class Invitation extends Model
     {
         return $this->belongsTo(Organization::class);
     }
+
+    public function invitedBy()
+    {
+        return $this->belongsTo(User::class, 'invited_by');
+    }
 }

@@ -19,7 +19,7 @@ class InvitationRepository
 
     public function findByToken(string $token)
     {
-        return Invitation::with('organization:id,name,logo_url')
+        return Invitation::with(['organization:id,name,logo_url', 'invitedBy:id,name'])
             ->where('token', $token)
             ->first();
     }
