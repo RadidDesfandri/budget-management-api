@@ -16,8 +16,10 @@ class InvitationController extends Controller
     public function createInvitation(Request $request, $organizationId)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'role' => 'required|string|in:admin,member,finance',
+        ], [
+            'email.exists' => 'The provided email is not registered.',
         ]);
 
         try {

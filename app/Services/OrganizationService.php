@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OrganizationUser;
+use App\Repositories\InvitationRepository;
 use App\Repositories\OrganizationRepository;
 use App\Repositories\OrganizationUserRepository;
 use Illuminate\Support\Facades\DB;
@@ -12,8 +13,8 @@ class OrganizationService
     public function __construct(
         protected OrganizationRepository $organizationRepo,
         protected OrganizationUserRepository $organizationUserRepo,
-        protected FileStorageService $fileStorage
-
+        protected FileStorageService $fileStorage,
+        protected InvitationRepository $invitationRepo
     ) {}
 
     public function detail($organizationId)
@@ -88,6 +89,7 @@ class OrganizationService
     {
         $totalMember = $this->organizationUserRepo->countMembers($organizationId);
         $totalAdmins = $this->organizationUserRepo->countMembers($organizationId, 'admin');
+        $pendingInvites = $this->invitationRepo->countPendingInvitations($organizationId);
 
         $paginatedMembers = $this->organizationUserRepo->getPaginatedMemberList($user, $filters, $organizationId);
 
@@ -95,7 +97,7 @@ class OrganizationService
             'stats' => [
                 'total_members'   => $totalMember,
                 'total_admins'    => $totalAdmins,
-                'pending_invites' => 0, // change real data
+                'pending_invites' => $pendingInvites
             ],
             'members' => $paginatedMembers,
         ];

@@ -33,4 +33,13 @@ class InvitationRepository
             ->where('expires_at', '>', Carbon::now())
             ->exists();
     }
+
+    public function countPendingInvitations($organizationId): int
+    {
+        return Invitation::where('organization_id', $organizationId)
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '>', Carbon::now())
+            ->count();
+    }
 }
