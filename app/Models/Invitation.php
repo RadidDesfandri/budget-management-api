@@ -19,4 +19,9 @@ class Invitation extends Model
             'rejected_at' => 'datetime',
         ];
     }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
 }

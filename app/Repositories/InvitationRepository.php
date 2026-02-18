@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Invitation;
+use Illuminate\Support\Carbon;
 
 class InvitationRepository
 {
@@ -11,8 +12,25 @@ class InvitationRepository
         return Invitation::create($data);
     }
 
-    public function model()
+    public function update(Invitation $invitation, array $data)
     {
-        return Invitation::class;
+        $invitation->update($data);
+    }
+
+    public function findByToken(string $token)
+    {
+        return Invitation::with('organization:id,name,logo_url')
+            ->where('token', $token)
+            ->first();
+    }
+
+    public function hasActiveInvitation(string $email, $organizationId): bool
+    {
+        return Invitation::where('email', $email)
+            ->where('organization_id', $organizationId)
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '>', Carbon::now())
+            ->exists();
     }
 }

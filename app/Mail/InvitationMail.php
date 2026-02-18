@@ -3,7 +3,7 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+// use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -20,11 +20,11 @@ class InvitationMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct($invitation, $organization)
+    public function __construct($invitation, $organization, $frontendUrl)
     {
         $this->invitation = $invitation;
         $this->organization = $organization;
-        $this->frontendUrl = config('app.frontend_url');
+        $this->frontendUrl = $frontendUrl;
     }
 
     /**

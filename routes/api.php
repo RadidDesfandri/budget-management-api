@@ -21,6 +21,8 @@ Route::group(['middleware' => 'throttle:api'], function () {
         ->name('password.reset')
         ->middleware(['signed']);
 
+    Route::get('org/invitation/verify', [InvitationController::class, 'verifyTokenInvitation']);
+
     Route::group(['middleware' => 'auth:api'], function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
@@ -41,12 +43,13 @@ Route::group(['middleware' => 'throttle:api'], function () {
                     Route::get('dropdown', [OrganizationController::class, 'orgDropdownOptions']);
                     Route::get('member-list', [OrganizationController::class, 'memberList']);
 
-                    Route::prefix('invitation')
-                        ->middleware(['org.role:owner,admin'])
-                        ->group(function () {
-                            Route::post('create', [InvitationController::class, 'createInvitation']);
-                        });
+                    Route::post('invitation/create', [InvitationController::class, 'createInvitation'])->middleware(['org.access', 'org.role:owner,admin']);
                 });
+        });
+
+        Route::prefix('org/invitation')->group(function () {
+            Route::post('accept', [InvitationController::class, 'acceptInvitation']);
+            Route::post('reject', [InvitationController::class, 'rejectInvitation']);
         });
     });
 });
