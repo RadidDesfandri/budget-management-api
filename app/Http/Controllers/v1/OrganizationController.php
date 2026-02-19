@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 
 class OrganizationController extends Controller
 {
+    public function __construct(protected OrganizationService $organizationService) {}
+
     public function show(Request $request)
     {
         $orgId = app('active_organization_id');
-        $organization = app(OrganizationService::class)->detail($orgId);
+        $organization = $this->organizationService->detail($orgId);
 
         return $this->successResponse('Organization details', $organization, 200);
     }
@@ -23,7 +25,7 @@ class OrganizationController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB
         ]);
 
-        $organization = app(OrganizationService::class)
+        $organization = $this->organizationService
             ->createOrganization($request->user()->id, $request->all());
 
         return $this->successResponse('Organization created successfully', $organization, 200);
@@ -31,7 +33,7 @@ class OrganizationController extends Controller
 
     public function orgDropdownOptions(Request $request, $organization_id)
     {
-        $data = app(OrganizationService::class)->orgDropdownOptions($request->user(), $organization_id);
+        $data = $this->organizationService->orgDropdownOptions($request->user(), $organization_id);
 
         return $this->successResponse('Organization dropdown options', $data, 200);
     }
@@ -45,7 +47,7 @@ class OrganizationController extends Controller
             'page_size' => $request->input('page_size', 10),
         ];
 
-        $data = app(OrganizationService::class)->memberList($request->user(), $filters, $organization_id);
+        $data = $this->organizationService->memberList($request->user(), $filters, $organization_id);
 
         return $this->successResponse('Member list', $data, 200);
     }
