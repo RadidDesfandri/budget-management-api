@@ -16,8 +16,10 @@ class InvitationController extends Controller
     public function createInvitation(Request $request, $organizationId)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'role' => 'required|string|in:admin,member,finance',
+        ], [
+            'email.exists' => 'The provided email is not registered.',
         ]);
 
         try {
@@ -69,7 +71,7 @@ class InvitationController extends Controller
 
             $this->invitationService->acceptInvitation($invitation, $request->user());
 
-            return $this->successResponse('Invitation accepted successfully.', null, 200);
+            return $this->successResponse('Invitation accepted successfully.', $invitation, 200);
         } catch (Exception $e) {
             $code = $e->getCode() ?: 500;
             $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
