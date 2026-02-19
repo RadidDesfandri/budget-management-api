@@ -99,4 +99,16 @@ class InvitationController extends Controller
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
     }
+
+    public function getInvitations(Request $request)
+    {
+        $filters = [
+            'status'    => $request->input('status'),
+            'page_size' => $request->input('page_size', 10),
+        ];
+
+        $invitations = $this->invitationService->getInvitations($request->user(), $filters);
+
+        return $this->successResponse('Invitations retrieved successfully.', $invitations, 200);
+    }
 }

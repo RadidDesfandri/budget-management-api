@@ -50,6 +50,7 @@ Route::group(['middleware' => 'throttle:api'], function () {
         Route::prefix('org/invitation')->group(function () {
             Route::post('accept', [InvitationController::class, 'acceptInvitation']);
             Route::post('reject', [InvitationController::class, 'rejectInvitation']);
+            Route::get('list', [InvitationController::class, 'getInvitations']);
         });
     });
 });
