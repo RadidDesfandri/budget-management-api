@@ -124,4 +124,8 @@ class InvitationService
             return $invitation;
         });
     }
+
+    public function getInvitations($currentUser, array $filters = []) {
+        return $this->invitationRepo->getPaginatedInvitations($currentUser, $filters);
+    }
 }
