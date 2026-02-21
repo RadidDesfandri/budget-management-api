@@ -6,7 +6,6 @@ use App\Models\Organization;
 
 class OrganizationRepository
 {
-
     public function all()
     {
         return Organization::all();

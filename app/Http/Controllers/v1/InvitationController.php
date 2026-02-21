@@ -10,33 +10,36 @@ use Illuminate\Http\Request;
 class InvitationController extends Controller
 {
     public function __construct(
-        protected InvitationService $invitationService
+        protected InvitationService $invitationService,
     ) {}
 
     public function createInvitation(Request $request, $organizationId)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'role' => 'required|string|in:admin,member,finance',
-        ], [
-            'email.exists' => 'The provided email is not registered.',
-        ]);
+        $request->validate(
+            [
+                "email" => "required|email|exists:users,email",
+                "role" => "required|string|in:admin,member,finance",
+            ],
+            [
+                "email.exists" => "The provided email is not registered.",
+            ],
+        );
 
         try {
             $invitation = $this->invitationService->createInvitation(
                 $request->all(),
                 $organizationId,
-                $request->user()
+                $request->user(),
             );
 
             return $this->successResponse(
-                'Invitation created successfully',
+                "Invitation created successfully",
                 $invitation,
-                201
+                201,
             );
         } catch (Exception $e) {
             $code = $e->getCode() ?: 500;
-            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
 
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
@@ -45,16 +48,22 @@ class InvitationController extends Controller
     public function verifyTokenInvitation(Request $request)
     {
         $request->validate([
-            'token' => 'required|string',
+            "token" => "required|string",
         ]);
 
         try {
-            $data = $this->invitationService->verifyTokenInvitation($request->token);
+            $data = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+            );
 
-            return $this->successResponse('Token invitation verified.', $data, 200);
+            return $this->successResponse(
+                "Token invitation verified.",
+                $data,
+                200,
+            );
         } catch (Exception $e) {
             $code = $e->getCode() ?: 500;
-            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
 
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
@@ -63,18 +72,27 @@ class InvitationController extends Controller
     public function acceptInvitation(Request $request)
     {
         $request->validate([
-            'token' => 'required|string',
+            "token" => "required|string",
         ]);
 
         try {
-            $invitation = $this->invitationService->verifyTokenInvitation($request->token);
+            $invitation = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+            );
 
-            $this->invitationService->acceptInvitation($invitation, $request->user());
+            $this->invitationService->acceptInvitation(
+                $invitation,
+                $request->user(),
+            );
 
-            return $this->successResponse('Invitation accepted successfully.', $invitation, 200);
+            return $this->successResponse(
+                "Invitation accepted successfully.",
+                $invitation,
+                200,
+            );
         } catch (Exception $e) {
             $code = $e->getCode() ?: 500;
-            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
 
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
@@ -83,18 +101,27 @@ class InvitationController extends Controller
     public function rejectInvitation(Request $request)
     {
         $request->validate([
-            'token' => 'required|string',
+            "token" => "required|string",
         ]);
 
         try {
-            $invitation = $this->invitationService->verifyTokenInvitation($request->token);
+            $invitation = $this->invitationService->verifyTokenInvitation(
+                $request->token,
+            );
 
-            $this->invitationService->rejectInvitation($invitation, $request->user());
+            $this->invitationService->rejectInvitation(
+                $invitation,
+                $request->user(),
+            );
 
-            return $this->successResponse('Invitation rejected successfully.', null, 200);
+            return $this->successResponse(
+                "Invitation rejected successfully.",
+                null,
+                200,
+            );
         } catch (Exception $e) {
             $code = $e->getCode() ?: 500;
-            $httpCode = ($code >= 200 && $code <= 599) ? $code : 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
 
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
@@ -103,12 +130,19 @@ class InvitationController extends Controller
     public function getInvitations(Request $request)
     {
         $filters = [
-            'status'    => $request->input('status'),
-            'page_size' => $request->input('page_size', 10),
+            "status" => $request->input("status"),
+            "page_size" => $request->input("page_size", 10),
         ];
 
-        $invitations = $this->invitationService->getInvitations($request->user(), $filters);
+        $invitations = $this->invitationService->getInvitations(
+            $request->user(),
+            $filters,
+        );
 
-        return $this->successResponse('Invitations retrieved successfully.', $invitations, 200);
+        return $this->successResponse(
+            "Invitations retrieved successfully.",
+            $invitations,
+            200,
+        );
     }
 }
