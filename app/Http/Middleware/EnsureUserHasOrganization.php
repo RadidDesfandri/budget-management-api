@@ -16,46 +16,56 @@ class EnsureUserHasOrganization
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $orgId = $request->route('organization_id');
+        $orgId = $request->route("organization_id");
 
         if (!$orgId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Organization ID is missing in URL.',
-                'data'    => null,
-                'error'   => 'MISSING_ORG_ID',
-                'statusCode' => 400,
-            ], 400);
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" => "Organization ID is missing in URL.",
+                    "data" => null,
+                    "error" => "MISSING_ORG_ID",
+                    "statusCode" => 400,
+                ],
+                400,
+            );
         }
 
         $organization = Organization::find($orgId);
 
         if (!$organization) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Organization not found.',
-                'data'    => null,
-                'error'   => 'NOT_FOUND',
-                'statusCode' => 404,
-            ], 404);
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" => "Organization not found.",
+                    "data" => null,
+                    "error" => "NOT_FOUND",
+                    "statusCode" => 404,
+                ],
+                404,
+            );
         }
 
-        $hasAccess = $request->user()
+        $hasAccess = $request
+            ->user()
             ->organizations()
-            ->where('organizations.id', $orgId)
+            ->where("organizations.id", $orgId)
             ->exists();
 
         if (!$hasAccess) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized: Access to Organization',
-                'data'    => null,
-                'error'   => 'UNAUTHORIZED',
-                'statusCode' => 403,
-            ], 403);
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" => "Unauthorized: Access to Organization",
+                    "data" => null,
+                    "error" => "UNAUTHORIZED",
+                    "statusCode" => 403,
+                ],
+                403,
+            );
         }
 
-        app()->instance('active_organization_id', $orgId);
+        app()->instance("active_organization_id", $orgId);
 
         return $next($request);
     }

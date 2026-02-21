@@ -19,24 +19,21 @@ class User extends Authenticatable implements JWTSubject
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'avatar_url',
-        'current_organization_id',
+        "name",
+        "email",
+        "password",
+        "avatar_url",
+        "current_organization_id",
     ];
 
-    protected $appends = ['full_avatar_url'];
+    protected $appends = ["full_avatar_url"];
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ["password", "remember_token"];
 
     /**
      * Get the attributes that should be cast.
@@ -46,17 +43,16 @@ class User extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            "email_verified_at" => "datetime",
+            "password" => "hashed",
         ];
     }
 
     public function organizations()
     {
-        return $this->belongsToMany(
-            Organization::class,
-            'organization_users'
-        )->withPivot('role')->withTimestamps();
+        return $this->belongsToMany(Organization::class, "organization_users")
+            ->withPivot("role")
+            ->withTimestamps();
     }
 
     public function getJWTIdentifier()
@@ -72,9 +68,9 @@ class User extends Authenticatable implements JWTSubject
     public function getFullAvatarUrlAttribute()
     {
         if ($this->avatar_url) {
-            return asset('storage/' . $this->avatar_url);
+            return asset("storage/" . $this->avatar_url);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name);
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name);
     }
 }

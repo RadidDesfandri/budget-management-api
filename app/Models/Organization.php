@@ -7,28 +7,23 @@ use Illuminate\Support\Facades\Auth;
 
 class Organization extends Model
 {
-    protected $table = 'organizations';
+    protected $table = "organizations";
 
-    protected $fillable = [
-        'name',
-        'logo_url',
-        'owner_id',
-    ];
+    protected $fillable = ["name", "logo_url", "owner_id"];
 
-    protected $appends = ['full_logo_url', 'current_user_role'];
+    protected $appends = ["full_logo_url", "current_user_role"];
 
     public function users()
     {
-        return $this->belongsToMany(
-            User::class,
-            'organization_users'
-        )->withPivot('role')->withTimestamps();
+        return $this->belongsToMany(User::class, "organization_users")
+            ->withPivot("role")
+            ->withTimestamps();
     }
 
     public function getFullLogoUrlAttribute()
     {
         if ($this->logo_url) {
-            return asset('storage/' . $this->logo_url);
+            return asset("storage/" . $this->logo_url);
         }
 
         return null;
@@ -40,9 +35,7 @@ class Organization extends Model
             return null;
         }
 
-        $userOrg = $this->users()
-            ->where('user_id', Auth::id())
-            ->first();
+        $userOrg = $this->users()->where("user_id", Auth::id())->first();
 
         return $userOrg ? $userOrg->pivot->role : null;
     }

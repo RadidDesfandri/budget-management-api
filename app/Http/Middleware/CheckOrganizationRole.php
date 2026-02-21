@@ -17,33 +17,41 @@ class CheckOrganizationRole
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        $orgId = $request->route('organization_id');
+        $orgId = $request->route("organization_id");
 
         if (!$orgId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Organization ID is missing in URL.',
-                'data'    => null,
-                'error'   => 'MISSING_ORG_ID',
-                'statusCode' => 400,
-            ], 400);
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" => "Organization ID is missing in URL.",
+                    "data" => null,
+                    "error" => "MISSING_ORG_ID",
+                    "statusCode" => 400,
+                ],
+                400,
+            );
         }
 
         $user = Auth::user();
 
-        $hasPermission = $user->organizations()
-            ->where('organizations.id', $orgId)
-            ->wherePivotIn('role', $roles)
+        $hasPermission = $user
+            ->organizations()
+            ->where("organizations.id", $orgId)
+            ->wherePivotIn("role", $roles)
             ->exists();
 
         if (!$hasPermission) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You do not have permission to access this organization.',
-                'data'    => null,
-                'error'   => 'UNAUTHORIZED',
-                'statusCode' => 403,
-            ], 403);
+            return response()->json(
+                [
+                    "success" => false,
+                    "message" =>
+                        "You do not have permission to access this organization.",
+                    "data" => null,
+                    "error" => "UNAUTHORIZED",
+                    "statusCode" => 403,
+                ],
+                403,
+            );
         }
 
         return $next($request);

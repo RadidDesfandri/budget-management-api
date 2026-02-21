@@ -15,18 +15,18 @@ class UserRepository
     public function create(array $data)
     {
         return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            "name" => $data["name"],
+            "email" => $data["email"],
+            "password" => Hash::make($data["password"]),
         ]);
     }
 
     public function update(User $user, array $data)
     {
         $user->update([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            "name" => $data["name"],
+            "email" => $data["email"],
+            "password" => Hash::make($data["password"]),
         ]);
     }
 
@@ -37,7 +37,7 @@ class UserRepository
 
     public function find($id)
     {
-        return User::with('organizations:id,name')->find($id);
+        return User::with("organizations:id,name")->find($id);
     }
 
     public function findOrFail($id)
@@ -47,6 +47,6 @@ class UserRepository
 
     public function findByEmail($email)
     {
-        return User::where('email', $email)->first();
+        return User::where("email", $email)->first();
     }
 }
