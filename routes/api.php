@@ -67,10 +67,24 @@ Route::group(["middleware" => "throttle:api"], function () {
                         "memberList",
                     ]);
 
-                    Route::post("invitation/create", [
-                        InvitationController::class,
-                        "createInvitation",
-                    ])->middleware(["org.access", "org.role:owner,admin"]);
+                    Route::middleware(["org.role:owner,admin"])->group(
+                        function () {
+                            Route::post("invitation/create", [
+                                InvitationController::class,
+                                "createInvitation",
+                            ]);
+
+                            Route::put("member/{user_id}/change-role", [
+                                OrganizationController::class,
+                                "changeRole",
+                            ]);
+
+                            Route::delete("member/{user_id}", [
+                                OrganizationController::class,
+                                "deleteMember",
+                            ]);
+                        },
+                    );
                 });
         });
 

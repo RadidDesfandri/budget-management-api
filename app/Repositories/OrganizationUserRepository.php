@@ -93,4 +93,21 @@ class OrganizationUserRepository
             ->where("organization_id", $organizationId)
             ->exists();
     }
+
+    public function getMember($organizationId, $userId)
+    {
+        return OrganizationUser::where("organization_id", $organizationId)
+            ->where("user_id", $userId)
+            ->first();
+    }
+
+    public function delete($organizationUser)
+    {
+        return $organizationUser->delete();
+    }
+
+    public function update(OrganizationUser $organizationUser, array $data)
+    {
+        return $organizationUser->update($data);
+    }
 }

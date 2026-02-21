@@ -6,6 +6,7 @@ use App\Models\OrganizationUser;
 use App\Repositories\InvitationRepository;
 use App\Repositories\OrganizationRepository;
 use App\Repositories\OrganizationUserRepository;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class OrganizationService
@@ -120,5 +121,55 @@ class OrganizationService
         ];
 
         return $data;
+    }
+
+    public function deleteMember($user, $organizationId, $userId)
+    {
+        $organizationUser = $this->organizationUserRepo->getMember(
+            $organizationId,
+            $userId,
+        );
+
+        if (!$organizationUser) {
+            throw new Exception("Member not found");
+        }
+
+        if ($organizationUser->user_id === $user->id) {
+            throw new Exception("You cannot delete yourself");
+        }
+
+        if ($organizationUser->role === OrganizationUser::ROLE_OWNER) {
+            throw new Exception("Owner cannot be deleted");
+        }
+
+        $this->organizationUserRepo->delete($organizationUser);
+
+        return true;
+    }
+
+    public function changeRole($user, $organizationId, $userId, $role)
+    {
+        $organizationUser = $this->organizationUserRepo->getMember(
+            $organizationId,
+            $userId,
+        );
+
+        if (!$organizationUser) {
+            throw new Exception("Member not found");
+        }
+
+        if ($organizationUser->user_id === $user->id) {
+            throw new Exception("You cannot change your role");
+        }
+
+        if ($organizationUser->role === OrganizationUser::ROLE_OWNER) {
+            throw new Exception("Owner cannot be changed");
+        }
+
+        $this->organizationUserRepo->update($organizationUser, [
+            "role" => $role,
+        ]);
+
+        return true;
     }
 }
