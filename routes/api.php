@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\v1\CategoryController;
 use App\Http\Controllers\v1\AuthController;
 use App\Http\Controllers\v1\InvitationController;
 use App\Http\Controllers\v1\OrganizationController;
@@ -85,6 +86,30 @@ Route::group(["middleware" => "throttle:api"], function () {
                             ]);
                         },
                     );
+
+                    Route::prefix("category")->group(function () {
+                        Route::get("/", [
+                            CategoryController::class,
+                            "allByOrganization",
+                        ]);
+
+                        Route::middleware([
+                            "org.role:owner,admin,finance",
+                        ])->group(function () {
+                            Route::post("create", [
+                                CategoryController::class,
+                                "create",
+                            ]);
+                            Route::put("update/{id}", [
+                                CategoryController::class,
+                                "update",
+                            ]);
+                            Route::delete("delete/{id}", [
+                                CategoryController::class,
+                                "delete",
+                            ]);
+                        });
+                    });
                 });
         });
 
