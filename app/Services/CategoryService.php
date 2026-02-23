@@ -16,11 +16,9 @@ class CategoryService
         return $this->categoryRepository->create($data);
     }
 
-    public function update($id, array $data)
+    public function update($id, array $data, $organizationId)
     {
-        $category = $this->categoryRepository->find($id);
-
-        \Log::info($category);
+        $category = $this->categoryRepository->findById($id, $organizationId);
 
         if (!$category) {
             throw new Exception("Category not found", 404);
@@ -29,9 +27,9 @@ class CategoryService
         return $this->categoryRepository->update($category, $data);
     }
 
-    public function delete($id)
+    public function delete($id, $organizationId)
     {
-        $category = $this->categoryRepository->find($id);
+        $category = $this->categoryRepository->findById($id, $organizationId);
 
         if (!$category) {
             throw new Exception("Category not found", 404);

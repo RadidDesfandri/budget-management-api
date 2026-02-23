@@ -16,9 +16,11 @@ class CategoryRepository
         return $category->update($data);
     }
 
-    public function find($id)
+    public function findById($id, $organization_id)
     {
-        return Category::where("id", $id)->first();
+        return Category::where("id", $id)
+            ->where("organization_id", $organization_id)
+            ->first();
     }
 
     public function delete(Category $category)
