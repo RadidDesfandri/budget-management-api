@@ -17,11 +17,17 @@ class CategoryController extends Controller
             "name" =>
                 "required|string|max:255|unique:categories,name,NULL,id,organization_id," .
                 $organization_id,
+            "icon" => "required|string|max:255",
+            "icon_color" => "nullable|string|max:255",
+            "background_color" => "nullable|string|max:255",
         ]);
 
         $category = $this->categoryService->create([
             "name" => $validated["name"],
             "organization_id" => $organization_id,
+            "icon" => $validated["icon"],
+            "icon_color" => $validated["icon_color"],
+            "background_color" => $validated["background_color"],
         ]);
 
         return $this->successResponse(
@@ -33,13 +39,16 @@ class CategoryController extends Controller
 
     public function update(Request $request, $organization_id, $id)
     {
-        try {
-            $validated = $request->validate([
-                "name" =>
-                    "required|string|max:255|unique:categories,name,NULL,id,organization_id," .
-                    $organization_id,
-            ]);
+        $validated = $request->validate([
+            "name" =>
+                "required|string|max:255|unique:categories,name,NULL,id,organization_id," .
+                $organization_id,
+            "icon" => "required|string|max:255",
+            "icon_color" => "nullable|string|max:255",
+            "background_color" => "nullable|string|max:255",
+        ]);
 
+        try {
             $category = $this->categoryService->update(
                 $id,
                 $validated,
