@@ -36,10 +36,15 @@ class CategoryController extends Controller
         try {
             $validated = $request->validate([
                 "name" =>
-                    "required|string|max:255|unique:categories,name," . $id,
+                    "required|string|max:255|unique:categories,name,NULL,id,organization_id," .
+                    $organization_id,
             ]);
 
-            $category = $this->categoryService->update($id, $validated);
+            $category = $this->categoryService->update(
+                $id,
+                $validated,
+                $organization_id,
+            );
 
             return $this->successResponse(
                 "Category updated successfully",
@@ -54,14 +59,22 @@ class CategoryController extends Controller
         }
     }
 
-    public function delete(Request $request, $id)
+    public function delete($organization_id, $id)
     {
-        $category = $this->categoryService->delete($id);
+        try {
+            $category = $this->categoryService->delete($id, $organization_id);
 
-        return $this->successResponse(
-            "Category deleted successfully",
-            $category,
-        );
+            return $this->successResponse(
+                "Category deleted successfully",
+                $category,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
     }
 
     public function allByOrganization($organization_id)
