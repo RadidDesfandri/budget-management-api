@@ -8,7 +8,13 @@ class Category extends Model
 {
     protected $table = "categories";
 
-    protected $fillable = ["name", "organization_id"];
+    protected $fillable = [
+        "name",
+        "organization_id",
+        "icon",
+        "icon_color",
+        "background_color",
+    ];
 
     protected $guarded = ["id"];
 
