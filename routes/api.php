@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\v1\BudgetController;
 use App\Http\Controllers\v1\CategoryController;
 use App\Http\Controllers\v1\AuthController;
 use App\Http\Controllers\v1\InvitationController;
@@ -106,6 +107,31 @@ Route::group(["middleware" => "throttle:api"], function () {
                             ]);
                             Route::delete("delete/{id}", [
                                 CategoryController::class,
+                                "delete",
+                            ]);
+                        });
+                    });
+
+                    Route::prefix("budget")->group(function () {
+                        Route::get("/", [
+                            BudgetController::class,
+                            "allByOrganization",
+                        ]);
+                        Route::get("{id}", [BudgetController::class, "show"]);
+
+                        Route::middleware([
+                            "org.role:owner,admin,finance",
+                        ])->group(function () {
+                            Route::post("create", [
+                                BudgetController::class,
+                                "create",
+                            ]);
+                            Route::put("update/{id}", [
+                                BudgetController::class,
+                                "update",
+                            ]);
+                            Route::delete("delete/{id}", [
+                                BudgetController::class,
                                 "delete",
                             ]);
                         });
