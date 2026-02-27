@@ -3,6 +3,7 @@
 use App\Http\Controllers\v1\BudgetController;
 use App\Http\Controllers\v1\CategoryController;
 use App\Http\Controllers\v1\AuthController;
+use App\Http\Controllers\v1\ExpenseController;
 use App\Http\Controllers\v1\InvitationController;
 use App\Http\Controllers\v1\OrganizationController;
 use Illuminate\Support\Facades\Route;
@@ -135,6 +136,27 @@ Route::group(["middleware" => "throttle:api"], function () {
                                 "delete",
                             ]);
                         });
+                    });
+
+                    Route::prefix("expenses")->group(function () {
+                        Route::get("/", [
+                            ExpenseController::class,
+                            "index",
+                        ]);
+                        Route::get("{id}", [ExpenseController::class, "show"]);
+
+                        Route::post("create", [
+                            ExpenseController::class,
+                            "store",
+                        ]);
+                        Route::put("update/{id}", [
+                            ExpenseController::class,
+                            "update",
+                        ]);
+                        Route::delete("delete/{id}", [
+                            ExpenseController::class,
+                            "destroy",
+                        ]);
                     });
                 });
         });

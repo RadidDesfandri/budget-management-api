@@ -12,9 +12,10 @@ return new class extends Migration {
     {
         Schema::create("expenses", function (Blueprint $table) {
             $table->id();
+            $table->string("title");
             $table->decimal("amount", 10, 2);
             $table->date("expense_date");
-            $table->text("description")->nullable();
+            $table->text("description");
             $table
                 ->enum("status", ["pending", "approved", "rejected"])
                 ->default("pending");
@@ -30,6 +31,7 @@ return new class extends Migration {
                 ->cascadeOnDelete();
             $table
                 ->foreignId("approved_by")
+                ->nullable()
                 ->constrained("users")
                 ->cascadeOnDelete();
             $table

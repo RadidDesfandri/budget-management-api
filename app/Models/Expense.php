@@ -9,6 +9,7 @@ class Expense extends Model
     protected $table = "expenses";
 
     protected $fillable = [
+        "title",
         "amount",
         "description",
         "status",
@@ -22,6 +23,8 @@ class Expense extends Model
         "organization_id",
         "budget_id",
     ];
+
+    protected $appends = ["full_receipt_url"];
 
     protected function casts(): array
     {
@@ -51,5 +54,14 @@ class Expense extends Model
     public function budget()
     {
         return $this->belongsTo(Budget::class);
+    }
+
+    public function getFullReceiptUrlAttribute()
+    {
+        if ($this->receipt_url) {
+            return asset("storage/" . $this->receipt_url);
+        }
+
+        return null;
     }
 }
