@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Repositories\BudgetRepository;
 use App\Repositories\ExpenseRepository;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -12,12 +14,33 @@ class ExpenseService
     public function __construct(
         protected ExpenseRepository $expenseRepository,
         protected FileStorageService $fileStorageService,
+        protected BudgetRepository $budgetRepository,
     ) {}
 
     public function createExpense(array $data, ?UploadedFile $receipt = null)
     {
         return DB::transaction(function () use ($data, $receipt) {
+            $date = Carbon::parse($data["expense_date"]);
+            $year = $date->year;
+            $month = $date->month;
+
+            $budget = $this->budgetRepository->getBudgetByRange(
+                $data["organization_id"],
+                $data["category_id"],
+                $year,
+                $month,
+            );
+
+            if (!$budget) {
+                throw new Exception(
+                    "There is no budget for this category in the period " .
+                        $date->format("F Y"),
+                    404,
+                );
+            }
+
             $data["status"] = "pending";
+            $data["budget_id"] = $budget->id;
 
             $expense = $this->expenseRepository->create($data);
 

@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Budget;
+use App\Models\Expense;
 
 class BudgetRepository
 {
@@ -38,7 +39,14 @@ class BudgetRepository
             ->whereYear("month", $year)
             ->whereMonth("month", $month)
             ->with("category")
-            ->withSum("expenses", "amount")
+            ->withSum(
+                [
+                    "expenses as expenses_sum_amount" => function ($query) {
+                        $query->where("status", "approved");
+                    },
+                ],
+                "amount",
+            )
             ->paginate($perPage);
     }
 
@@ -55,27 +63,54 @@ class BudgetRepository
             ->exists();
     }
 
-    public function sumByOrganizationId(
+    public function getBudgetByRange(
         $organization_id,
+        $category_id,
         int $year,
         int $month,
-    ): float {
+    ) {
         return Budget::where("organization_id", $organization_id)
+            ->where("category_id", $category_id)
+            ->whereYear("month", $year)
+            ->whereMonth("month", $month)
+            ->first();
+    }
+
+    public function getBudgetStats($organization_id, int $year, int $month)
+    {
+        $totalBudget = Budget::where("organization_id", $organization_id)
             ->whereYear("month", $year)
             ->whereMonth("month", $month)
             ->sum("amount");
-    }
 
-    public function sumUsedByOrganizationId(
-        $organization_id,
-        int $year,
-        int $month,
-    ): float {
-        return Budget::where("organization_id", $organization_id)
-            ->whereYear("month", $year)
-            ->whereMonth("month", $month)
-            ->withSum("expenses", "amount")
-            ->get()
-            ->sum("expenses_sum_amount");
+        $totalUsed = Expense::whereHas("budget", function ($q) use (
+            $organization_id,
+            $year,
+            $month,
+        ) {
+            $q->where("organization_id", $organization_id)
+                ->whereYear("month", $year)
+                ->whereMonth("month", $month);
+        })
+            ->where("status", "approved")
+            ->sum("amount");
+
+        $totalPending = Expense::whereHas("budget", function ($q) use (
+            $organization_id,
+            $year,
+            $month,
+        ) {
+            $q->where("organization_id", $organization_id)
+                ->whereYear("month", $year)
+                ->whereMonth("month", $month);
+        })
+            ->where("status", "pending")
+            ->sum("amount");
+
+        return (object) [
+            "total_budget" => $totalBudget,
+            "expenses_sum_amount" => $totalUsed,
+            "total_pending" => $totalPending,
+        ];
     }
 }

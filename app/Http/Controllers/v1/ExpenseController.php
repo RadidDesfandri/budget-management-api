@@ -43,29 +43,29 @@ class ExpenseController extends Controller
                     $organization_id,
                 ),
             ],
-            "budget_id" => [
-                "nullable",
-                "integer",
-                Rule::exists("budgets", "id")->where(
-                    "organization_id",
-                    $organization_id,
-                ),
-            ],
             "receipt" => "required|file|mimes:jpg,jpeg,png,pdf|max:5120", // 5MB
         ]);
-        $data["user_id"] = $request->user()->id;
-        $data["organization_id"] = $organization_id;
 
-        $expense = $this->expenseService->createExpense(
-            data: $data,
-            receipt: $request->file("receipt"),
-        );
+        try {
+            $data["user_id"] = $request->user()->id;
+            $data["organization_id"] = $organization_id;
 
-        return $this->successResponse(
-            "Expense created successfully",
-            $expense,
-            201,
-        );
+            $expense = $this->expenseService->createExpense(
+                data: $data,
+                receipt: $request->file("receipt"),
+            );
+
+            return $this->successResponse(
+                "Expense created successfully",
+                $expense,
+                201,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
     }
 
     public function update(Request $request, $organization_id, $expense_id)
@@ -79,14 +79,6 @@ class ExpenseController extends Controller
                 "sometimes",
                 "integer",
                 Rule::exists("categories", "id")->where(
-                    "organization_id",
-                    $organization_id,
-                ),
-            ],
-            "budget_id" => [
-                "nullable",
-                "integer",
-                Rule::exists("budgets", "id")->where(
                     "organization_id",
                     $organization_id,
                 ),

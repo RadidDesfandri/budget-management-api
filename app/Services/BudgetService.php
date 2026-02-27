@@ -115,22 +115,22 @@ class BudgetService
             ->sortBy($sortBy, SORT_REGULAR, $sortDir === "desc")
             ->values();
 
-        $totalBudget = $this->budgetRepository->sumByOrganizationId(
+        $stats = $this->budgetRepository->getBudgetStats(
             $organization_id,
             (int) $year,
             (int) $month,
         );
-        $totalUsed = $this->budgetRepository->sumUsedByOrganizationId(
-            $organization_id,
-            (int) $year,
-            (int) $month,
-        );
+
+        $totalBudget = $stats->total_budget ?? 0;
+        $totalUsed = $stats->expenses_sum_amount ?? 0;
+        $totalPending = $stats->total_pending ?? 0;
 
         return [
             "period" => $period,
             "total_budget" => $totalBudget,
             "total_used" => $totalUsed,
             "total_remaining" => $totalBudget - $totalUsed,
+            "total_pending" => $totalPending,
             "budgets" => [
                 "data" => $sorted,
                 "current_page" => $budgets->currentPage(),
