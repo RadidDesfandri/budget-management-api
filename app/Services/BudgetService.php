@@ -75,7 +75,7 @@ class BudgetService
         return $budget->load("category");
     }
 
-    public function allByOrganization($organization_id, $filters)
+    public function getBudgets($organization_id, $filters)
     {
         $period = $filters["period"] ?? now()->format("Y-m");
         $sortBy = $filters["sort_by"] ?? "budget";
@@ -92,7 +92,7 @@ class BudgetService
         );
 
         $formatted = $budgets->through(function ($budget) {
-            $used = $budget->expenses_sum_amount ?? 0; // dummy: ganti saat expenses sudah siap
+            $used = $budget->expenses_sum_amount ?? 0;
             $remaining = $budget->amount - $used;
 
             return [
@@ -120,8 +120,11 @@ class BudgetService
             (int) $year,
             (int) $month,
         );
-        // $totalUsed = $budgets->sum(fn($b) => $b->expenses_sum_amount ?? 0);
-        $totalUsed = 0;
+        $totalUsed = $this->budgetRepository->sumUsedByOrganizationId(
+            $organization_id,
+            (int) $year,
+            (int) $month,
+        );
 
         return [
             "period" => $period,

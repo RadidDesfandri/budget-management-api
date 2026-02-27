@@ -33,4 +33,9 @@ class Budget extends Model
     {
         return $this->belongsTo(Organization::class);
     }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

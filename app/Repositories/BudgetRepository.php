@@ -38,7 +38,7 @@ class BudgetRepository
             ->whereYear("month", $year)
             ->whereMonth("month", $month)
             ->with("category")
-            // ->withSum("expenses", "amount")
+            ->withSum("expenses", "amount")
             ->paginate($perPage);
     }
 
@@ -64,5 +64,18 @@ class BudgetRepository
             ->whereYear("month", $year)
             ->whereMonth("month", $month)
             ->sum("amount");
+    }
+
+    public function sumUsedByOrganizationId(
+        $organization_id,
+        int $year,
+        int $month,
+    ): float {
+        return Budget::where("organization_id", $organization_id)
+            ->whereYear("month", $year)
+            ->whereMonth("month", $month)
+            ->withSum("expenses", "amount")
+            ->get()
+            ->sum("expenses_sum_amount");
     }
 }
