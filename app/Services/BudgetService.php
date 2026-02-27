@@ -115,7 +115,11 @@ class BudgetService
             ->sortBy($sortBy, SORT_REGULAR, $sortDir === "desc")
             ->values();
 
-        $totalBudget = $budgets->sum("amount");
+        $totalBudget = $this->budgetRepository->sumByOrganizationId(
+            $organization_id,
+            (int) $year,
+            (int) $month,
+        );
         // $totalUsed = $budgets->sum(fn($b) => $b->expenses_sum_amount ?? 0);
         $totalUsed = 0;
 

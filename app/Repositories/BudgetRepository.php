@@ -54,4 +54,15 @@ class BudgetRepository
             ->where("id", "!=", $id)
             ->exists();
     }
+
+    public function sumByOrganizationId(
+        $organization_id,
+        int $year,
+        int $month,
+    ): float {
+        return Budget::where("organization_id", $organization_id)
+            ->whereYear("month", $year)
+            ->whereMonth("month", $month)
+            ->sum("amount");
+    }
 }
