@@ -124,11 +124,13 @@ class BudgetService
             "total_budget" => $totalBudget,
             "total_used" => $totalUsed,
             "total_remaining" => $totalBudget - $totalUsed,
-            "data" => $sorted,
-            "current_page" => $budgets->currentPage(),
-            "per_page" => $budgets->perPage(),
-            "total" => $budgets->total(),
-            "last_page" => $budgets->lastPage(),
+            "budgets" => [
+                "data" => $sorted,
+                "current_page" => $budgets->currentPage(),
+                "per_page" => $budgets->perPage(),
+                "total" => $budgets->total(),
+                "last_page" => $budgets->lastPage(),
+            ],
         ];
     }
 }
