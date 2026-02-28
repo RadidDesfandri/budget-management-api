@@ -122,7 +122,7 @@ class BudgetController extends Controller
             "page_size" => "nullable|integer|min:1|max:100",
         ]);
 
-        $budgets = $this->budgetService->allByOrganization(
+        $budgets = $this->budgetService->getBudgets(
             $organization_id,
             $validated,
         );
