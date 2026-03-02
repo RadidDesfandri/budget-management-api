@@ -12,20 +12,39 @@ class ExpenseController extends Controller
 {
     public function __construct(protected ExpenseService $expenseService) {}
 
-    public function index(Request $request)
+    public function index(Request $request, $organization_id)
     {
         $filters = $request->only([
-            "user_id",
             "status",
-            "category_id",
-            "budget_id",
+            "category",
             "date_from",
             "date_to",
+            "search",
+            "sort_by",
+            "order_by",
+            "page_size",
         ]);
 
-        // $expenses = $this->expenseService->getExpenses($filters);
+        $user = $request->user();
+        $organization = $user
+            ->organizations()
+            ->where("organizations.id", $organization_id)
+            ->first();
 
-        return $this->successResponse("Expenses fetched successfully", [], 200);
+        $role = $organization->pivot->role;
+
+        $expenses = $this->expenseService->getExpenses(
+            $filters,
+            $organization_id,
+            $user->id,
+            $role,
+        );
+
+        return $this->successResponse(
+            "Expenses fetched successfully",
+            $expenses,
+            200,
+        );
     }
 
     public function store(Request $request, $organization_id)

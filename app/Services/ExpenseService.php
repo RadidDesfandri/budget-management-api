@@ -17,6 +17,20 @@ class ExpenseService
         protected BudgetRepository $budgetRepository,
     ) {}
 
+    public function getExpenses(
+        array $filters,
+        $organization_id,
+        $user_id,
+        $role,
+    ) {
+        return $this->expenseRepository->paginate(
+            $organization_id,
+            $filters,
+            $user_id,
+            $role,
+        );
+    }
+
     public function createExpense(array $data, ?UploadedFile $receipt = null)
     {
         return DB::transaction(function () use ($data, $receipt) {
