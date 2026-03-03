@@ -29,21 +29,27 @@ class ExpenseRepository
             ->first();
     }
 
-    public function paginate($organization_id, $filters, int $perPage = 10)
+    public function paginate($organization_id, $filters, $user_id, $role)
     {
         $query = Expense::where("organization_id", $organization_id)->with([
-            "category",
-            "user",
+            "category:id,name,icon,icon_color,background_color",
+            "user:id,name,avatar_url",
         ]);
 
-        if (isset($filters["category_id"])) {
-            $query->where("category_id", $filters["category_id"]);
+        if ($role === "member") {
+            $query->where("user_id", $user_id);
         }
 
-        if (isset($filters["start_date"]) && isset($filters["end_date"])) {
+        if (isset($filters["category"])) {
+            $query->whereHas("category", function ($query) use ($filters) {
+                $query->where("name", "like", "%" . $filters["category"] . "%");
+            });
+        }
+
+        if (isset($filters["date_from"]) && isset($filters["date_to"])) {
             $query->whereBetween("expense_date", [
-                $filters["start_date"],
-                $filters["end_date"],
+                $filters["date_from"],
+                $filters["date_to"],
             ]);
         }
 
@@ -52,14 +58,21 @@ class ExpenseRepository
         }
 
         if (isset($filters["search"])) {
-            $query->where("title", "like", "%" . $filters["search"] . "%");
+            $query->where(function ($q) use ($filters) {
+                $searchTerm = "%" . $filters["search"] . "%";
+                $q->where("title", "like", $searchTerm)
+                    ->orWhere("amount", "like", $searchTerm)
+                    ->orWhere("description", "like", $searchTerm)
+                    ->orWhereHas("user", function ($inner) use ($searchTerm) {
+                        $inner->where("name", "like", $searchTerm);
+                    });
+            });
         }
 
         $sortBy = $filters["sort_by"] ?? "expense_date";
         $orderBy = $filters["order_by"] ?? "desc";
+        $pageSize = $filters["page_size"] ?? 10;
 
-        $query->orderBy($sortBy, $orderBy);
-
-        return $query->paginate($perPage);
+        return $query->orderBy($sortBy, $orderBy)->paginate($pageSize);
     }
 }
