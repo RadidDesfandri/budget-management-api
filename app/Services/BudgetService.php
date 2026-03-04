@@ -3,28 +3,47 @@
 namespace App\Services;
 
 use App\Repositories\BudgetRepository;
+use App\Repositories\ExpenseRepository;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class BudgetService
 {
-    public function __construct(protected BudgetRepository $budgetRepository) {}
+    public function __construct(
+        protected BudgetRepository $budgetRepository,
+        protected ExpenseRepository $expenseRepository,
+    ) {}
 
     public function create(array $data)
     {
-        $existingBudget = $this->budgetRepository->existingBudget(
-            $data["month"],
-            $data["category_id"],
-            $data["organization_id"],
-        );
-
-        if ($existingBudget) {
-            throw new Exception(
-                "The budget for this category and month is already available.",
-                400,
+        return DB::transaction(function () use ($data) {
+            $existingBudget = $this->budgetRepository->existingBudget(
+                $data["month"],
+                $data["category_id"],
+                $data["organization_id"],
             );
-        }
 
-        return $this->budgetRepository->create($data);
+            if ($existingBudget) {
+                throw new Exception(
+                    "The budget for this category and month is already available.",
+                    400,
+                );
+            }
+
+            $budget = $this->budgetRepository->create($data);
+
+            $date = Carbon::parse($data["month"]);
+            $this->expenseRepository->assignBudgetToUnassignedExpenses(
+                $budget->id,
+                $data["organization_id"],
+                $data["category_id"],
+                $date->year,
+                $date->month,
+            );
+
+            return $budget;
+        });
     }
 
     public function update($id, array $data, $organizationId)
