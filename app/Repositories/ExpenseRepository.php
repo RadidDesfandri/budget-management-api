@@ -75,4 +75,19 @@ class ExpenseRepository
 
         return $query->orderBy($sortBy, $orderBy)->paginate($pageSize);
     }
+
+    public function assignBudgetToUnassignedExpenses(
+        int $budgetId,
+        $organizationId,
+        $categoryId,
+        int $year,
+        int $month,
+    ): int {
+        return Expense::whereNull("budget_id")
+            ->where("organization_id", $organizationId)
+            ->where("category_id", $categoryId)
+            ->whereYear("expense_date", $year)
+            ->whereMonth("expense_date", $month)
+            ->update(["budget_id" => $budgetId]);
+    }
 }

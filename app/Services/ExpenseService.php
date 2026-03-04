@@ -45,16 +45,8 @@ class ExpenseService
                 $month,
             );
 
-            if (!$budget) {
-                throw new Exception(
-                    "There is no budget for this category in the period " .
-                        $date->format("F Y"),
-                    404,
-                );
-            }
-
             $data["status"] = "pending";
-            $data["budget_id"] = $budget->id;
+            $data["budget_id"] = $budget?->id;
 
             $expense = $this->expenseRepository->create($data);
 
