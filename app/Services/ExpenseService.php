@@ -31,6 +31,23 @@ class ExpenseService
         );
     }
 
+    public function getExpense($expense_id, $organization_id)
+    {
+        $expense = $this->expenseRepository->findById(
+            $expense_id,
+            $organization_id,
+        );
+
+        if (!$expense) {
+            throw new Exception("Expense not found", 404);
+        }
+
+        return $expense->load(
+            "category:id,name,icon,icon_color,background_color",
+            "user:id,name,avatar_url",
+        );
+    }
+
     public function createExpense(array $data, ?UploadedFile $receipt = null)
     {
         return DB::transaction(function () use ($data, $receipt) {
@@ -70,12 +87,16 @@ class ExpenseService
         $organization_id,
         array $data,
         ?UploadedFile $receipt = null,
+        $user_id = null,
+        $role = null,
     ) {
         return DB::transaction(function () use (
             $expense_id,
             $organization_id,
             $data,
             $receipt,
+            $user_id,
+            $role,
         ) {
             $expense = $this->expenseRepository->findById(
                 $expense_id,
@@ -84,6 +105,16 @@ class ExpenseService
 
             if (!$expense) {
                 throw new Exception("Expense not found", 404);
+            }
+
+            if (
+                in_array($role, ["member", "finance"]) &&
+                $expense->user_id !== $user_id
+            ) {
+                throw new Exception(
+                    "You can only update your own expenses.",
+                    403,
+                );
             }
 
             if ($expense->status !== "pending") {
