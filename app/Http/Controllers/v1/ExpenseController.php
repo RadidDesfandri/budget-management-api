@@ -47,6 +47,27 @@ class ExpenseController extends Controller
         );
     }
 
+    public function show($organization_id, $expense_id)
+    {
+        try {
+            $expense = $this->expenseService->getExpense(
+                $expense_id,
+                $organization_id,
+            );
+
+            return $this->successResponse(
+                "Expense fetched successfully",
+                $expense,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
     public function store(Request $request, $organization_id)
     {
         $data = $request->validate([
@@ -106,11 +127,21 @@ class ExpenseController extends Controller
         ]);
 
         try {
+            $user = $request->user();
+            $organization = $user
+                ->organizations()
+                ->where("organizations.id", $organization_id)
+                ->first();
+
+            $role = $organization->pivot->role;
+
             $expense = $this->expenseService->updateExpense(
                 expense_id: $expense_id,
                 organization_id: $organization_id,
                 data: $data,
                 receipt: $request->file("receipt"),
+                user_id: $user->id,
+                role: $role,
             );
 
             return $this->successResponse(
