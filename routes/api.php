@@ -139,10 +139,7 @@ Route::group(["middleware" => "throttle:api"], function () {
                     });
 
                     Route::prefix("expenses")->group(function () {
-                        Route::get("/", [
-                            ExpenseController::class,
-                            "index",
-                        ]);
+                        Route::get("/", [ExpenseController::class, "index"]);
                         Route::get("{id}", [ExpenseController::class, "show"]);
 
                         Route::post("create", [
@@ -157,6 +154,19 @@ Route::group(["middleware" => "throttle:api"], function () {
                             ExpenseController::class,
                             "destroy",
                         ]);
+
+                        Route::middleware([
+                            "org.role:owner,admin,finance",
+                        ])->group(function () {
+                            Route::post("{id}/approve", [
+                                ExpenseController::class,
+                                "approve",
+                            ]);
+                            Route::post("{id}/reject", [
+                                ExpenseController::class,
+                                "reject",
+                            ]);
+                        });
                     });
                 });
         });

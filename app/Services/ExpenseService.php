@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\BudgetRepository;
 use App\Repositories\ExpenseRepository;
+use Auth;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\UploadedFile;
@@ -168,6 +169,70 @@ class ExpenseService
             }
 
             return $this->expenseRepository->delete($expense);
+        });
+    }
+
+    public function approveExpense($expense_id, $organization_id)
+    {
+        return DB::transaction(function () use ($expense_id, $organization_id) {
+            $expense = $this->expenseRepository->findById(
+                $expense_id,
+                $organization_id,
+            );
+
+            if (!$expense) {
+                throw new Exception("Expense not found", 404);
+            }
+
+            if ($expense->status !== "pending") {
+                throw new Exception(
+                    "Only pending expenses can be approved.",
+                    403,
+                );
+            }
+
+            $userId = Auth::id();
+
+            $expense = $this->expenseRepository->update($expense, [
+                "status" => "approved",
+                "approved_at" => now(),
+                "approved_by" => $userId,
+            ]);
+
+            return $expense;
+        });
+    }
+
+    public function rejectExpense($expense_id, $organization_id, $data)
+    {
+        return DB::transaction(function () use (
+            $expense_id,
+            $organization_id,
+            $data,
+        ) {
+            $expense = $this->expenseRepository->findById(
+                $expense_id,
+                $organization_id,
+            );
+
+            if (!$expense) {
+                throw new Exception("Expense not found", 404);
+            }
+
+            if ($expense->status !== "pending") {
+                throw new Exception(
+                    "Only pending expenses can be rejected.",
+                    403,
+                );
+            }
+
+            $expense = $this->expenseRepository->update($expense, [
+                "status" => "rejected",
+                "rejected_at" => now(),
+                "rejected_reason" => $data["reason"],
+            ]);
+
+            return $expense;
         });
     }
 }

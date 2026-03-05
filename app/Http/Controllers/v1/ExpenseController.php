@@ -177,4 +177,51 @@ class ExpenseController extends Controller
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
     }
+
+    public function approve($organization_id, $expense_id)
+    {
+        try {
+            $expense = $this->expenseService->approveExpense(
+                $expense_id,
+                $organization_id,
+            );
+
+            return $this->successResponse(
+                "Expense approved successfully",
+                $expense,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
+    public function reject(Request $request, $organization_id, $expense_id)
+    {
+        $data = $request->validate([
+            "reason" => "required|string|max:500|min:10",
+        ]);
+
+        try {
+            $expense = $this->expenseService->rejectExpense(
+                $expense_id,
+                $organization_id,
+                $data,
+            );
+
+            return $this->successResponse(
+                "Expense rejected successfully",
+                $expense,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
 }

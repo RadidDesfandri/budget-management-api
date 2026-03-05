@@ -18,6 +18,7 @@ class Expense extends Model
         "approved_at",
         "rejected_at",
         "rejected_reason",
+        "approved_by",
         "user_id",
         "category_id",
         "organization_id",
