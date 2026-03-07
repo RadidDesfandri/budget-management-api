@@ -140,6 +140,19 @@ Route::group(["middleware" => "throttle:api"], function () {
 
                     Route::prefix("expenses")->group(function () {
                         Route::get("/", [ExpenseController::class, "index"]);
+                        Route::get("stats", [
+                            ExpenseController::class,
+                            "stats",
+                        ]);
+                        Route::get("line-chart", [
+                            ExpenseController::class,
+                            "lineChart",
+                        ]);
+                        Route::get("pie-chart", [
+                            ExpenseController::class,
+                            "pieChart",
+                        ]);
+
                         Route::get("{id}", [ExpenseController::class, "show"]);
 
                         Route::post("create", [

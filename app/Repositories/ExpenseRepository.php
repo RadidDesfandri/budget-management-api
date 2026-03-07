@@ -90,4 +90,41 @@ class ExpenseRepository
             ->whereMonth("expense_date", $month)
             ->update(["budget_id" => $budgetId]);
     }
+
+    public function getSum(
+        $organization_id,
+        $status = null,
+        $startDate,
+        $endDate,
+    ) {
+        $query = Expense::where(
+            "organization_id",
+            $organization_id,
+        )->whereBetween("expense_date", [$startDate, $endDate]);
+
+        if ($status) {
+            $query->where("status", $status);
+        }
+
+        return $query->sum("amount");
+    }
+
+    public function getCount(
+        $organization_id,
+        $status = null,
+        $startDate = null,
+        $endDate = null,
+    ) {
+        $query = Expense::where("organization_id", $organization_id);
+
+        if ($status) {
+            $query->where("status", $status);
+        }
+
+        if ($startDate && $endDate) {
+            $query->whereBetween("expense_date", [$startDate, $endDate]);
+        }
+
+        return $query->count();
+    }
 }
