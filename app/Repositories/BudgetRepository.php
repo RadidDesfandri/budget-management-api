@@ -113,4 +113,57 @@ class BudgetRepository
             "total_pending" => $totalPending,
         ];
     }
+
+    public function getBudgetStatsByRange(
+        $organization_id,
+        $startDate,
+        $endDate,
+    ) {
+        $totalBudget = Budget::where("organization_id", $organization_id)
+            ->whereBetween("month", [
+                $startDate->copy()->startOfMonth(),
+                $endDate->copy()->endOfMonth(),
+            ])
+            ->sum("amount");
+
+        $totalUsed = Expense::whereHas("budget", function ($q) use (
+            $organization_id,
+            $startDate,
+            $endDate,
+        ) {
+            $q->where("organization_id", $organization_id)->whereBetween(
+                "month",
+                [
+                    $startDate->copy()->startOfMonth(),
+                    $endDate->copy()->endOfMonth(),
+                ],
+            );
+        })
+            ->where("status", "approved")
+            ->whereBetween("expense_date", [$startDate, $endDate])
+            ->sum("amount");
+
+        $totalPending = Expense::whereHas("budget", function ($q) use (
+            $organization_id,
+            $startDate,
+            $endDate,
+        ) {
+            $q->where("organization_id", $organization_id)->whereBetween(
+                "month",
+                [
+                    $startDate->copy()->startOfMonth(),
+                    $endDate->copy()->endOfMonth(),
+                ],
+            );
+        })
+            ->where("status", "pending")
+            ->whereBetween("expense_date", [$startDate, $endDate])
+            ->sum("amount");
+
+        return (object) [
+            "total_budget" => $totalBudget,
+            "expenses_sum_amount" => $totalUsed,
+            "total_pending" => $totalPending,
+        ];
+    }
 }
