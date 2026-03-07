@@ -224,4 +224,59 @@ class ExpenseController extends Controller
             return $this->errorResponse($e->getMessage(), null, $httpCode);
         }
     }
+
+    public function stats(Request $request, $organization_id)
+    {
+        try {
+            $filter = $request->query("filter", "30d");
+            $stats = $this->expenseService->stats($organization_id, $filter);
+
+            return $this->successResponse(
+                "Expense stats fetched successfully",
+                $stats,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
+    public function lineChart($organization_id)
+    {
+        try {
+            $lineChart = $this->expenseService->lineChart($organization_id);
+
+            return $this->successResponse(
+                "Expense line chart fetched successfully",
+                $lineChart,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
+
+    public function pieChart($organization_id)
+    {
+        try {
+            $pieChart = $this->expenseService->pieChart($organization_id);
+
+            return $this->successResponse(
+                "Expense pie chart fetched successfully",
+                $pieChart,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
+    }
 }

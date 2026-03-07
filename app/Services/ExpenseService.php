@@ -235,4 +235,168 @@ class ExpenseService
             return $expense;
         });
     }
+
+    public function stats($organization_id, $filter = "30d")
+    {
+        [
+            $currentStart,
+            $currentEnd,
+            $prevStart,
+            $prevEnd,
+            $label,
+        ] = $this->parseDateFilter($filter);
+
+        $currentAmount = $this->expenseRepository->getSum(
+            $organization_id,
+            "approved",
+            $currentStart,
+            $currentEnd,
+        );
+        $prevAmount = $this->expenseRepository->getSum(
+            $organization_id,
+            "approved",
+            $prevStart,
+            $prevEnd,
+        );
+
+        $pendingCount = $this->expenseRepository->getCount(
+            $organization_id,
+            "pending",
+        );
+        $approvedCount = $this->expenseRepository->getCount(
+            $organization_id,
+            "approved",
+            $currentStart,
+            $currentEnd,
+        );
+
+        $budgetStats = $this->budgetRepository->getBudgetStats(
+            $organization_id,
+            $currentStart->year,
+            $currentStart->month,
+        );
+
+        $percentChange = 0;
+        if ($prevAmount > 0) {
+            $percentChange =
+                (($currentAmount - $prevAmount) / $prevAmount) * 100;
+        } elseif ($currentAmount > 0) {
+            $percentChange = 100;
+        }
+
+        return [
+            "total_expenses" => [
+                "amount" => (float) $currentAmount,
+                "percent_change" => round($percentChange, 2),
+                "trend" => $currentAmount >= $prevAmount ? "up" : "down",
+            ],
+            "pending_approvals" => [
+                "count" => $pendingCount,
+            ],
+            "approved_expenses" => [
+                "count" => $approvedCount,
+                "period" => $label,
+            ],
+            "remaining_budget" => [
+                "amount" =>
+                    $budgetStats->total_budget -
+                    $budgetStats->expenses_sum_amount,
+                "allocated" => (float) $budgetStats->total_budget,
+            ],
+        ];
+    }
+
+    public function lineChart($organization_id)
+    {
+        $year = Carbon::now()->year;
+        $chartData = [];
+
+        for ($i = 1; $i <= 12; $i++) {
+            $monthName = Carbon::create()->month($i)->format("M");
+            $startDate = Carbon::create($year, $i, 1)->startOfMonth();
+            $endDate = Carbon::create($year, $i, 1)->endOfMonth();
+
+            $expenses = $this->expenseRepository->getSum(
+                $organization_id,
+                "approved",
+                $startDate,
+                $endDate,
+            );
+
+            $budget = DB::table("budgets")
+                ->where("organization_id", $organization_id)
+                ->whereYear("month", $year)
+                ->whereMonth("month", $i)
+                ->sum("amount");
+
+            $chartData[] = [
+                "label" => $monthName,
+                "expenses" => (float) $expenses,
+                "budget" => (float) $budget,
+            ];
+        }
+
+        return $chartData;
+    }
+
+    public function pieChart($organization_id)
+    {
+        $expenses = DB::table("expenses")
+            ->join("categories", "expenses.category_id", "=", "categories.id")
+            ->where("expenses.organization_id", $organization_id)
+            ->where("expenses.status", "approved")
+            ->select(
+                "categories.name as label",
+                DB::raw("SUM(expenses.amount) as value"),
+            )
+            ->groupBy("categories.id", "categories.name")
+            ->get();
+
+        return $expenses
+            ->map(function ($item) {
+                return [
+                    "label" => ucfirst($item->label),
+                    "value" => (float) $item->value,
+                ];
+            })
+            ->toArray();
+    }
+
+    private function parseDateFilter($filter)
+    {
+        $now = Carbon::now();
+        $label = "this_period";
+
+        if ($filter === "7d") {
+            $start = $now->copy()->subDays(7);
+            $end = $now;
+            $pStart = $start->copy()->subDays(7);
+            $pEnd = $start->copy();
+            $label = "last_7_days";
+        } elseif ($filter === "last_month") {
+            $start = $now->copy()->subMonth()->startOfMonth();
+            $end = $now->copy()->subMonth()->endOfMonth();
+            $pStart = $start->copy()->subMonth();
+            $pEnd = $start->copy()->subDay();
+            $label = "last_month";
+        } elseif (str_contains($filter, " - ")) {
+            // Custom Range: "2026-02-03 - 2026-02-05"
+            [$s, $e] = explode(" - ", $filter);
+            $start = Carbon::parse($s)->startOfDay();
+            $end = Carbon::parse($e)->endOfDay();
+            $diffInDays = $start->diffInDays($end);
+            $pStart = $start->copy()->subDays($diffInDays);
+            $pEnd = $start->copy();
+            $label = "custom_range";
+        } else {
+            // Default 30d
+            $start = $now->copy()->subDays(30);
+            $end = $now;
+            $pStart = $start->copy()->subDays(30);
+            $pEnd = $start->copy();
+            $label = "last_30_days";
+        }
+
+        return [$start, $end, $pStart, $pEnd, $label];
+    }
 }
