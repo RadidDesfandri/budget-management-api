@@ -34,6 +34,8 @@ class ExpenseRepository
         $query = Expense::where("organization_id", $organization_id)->with([
             "category:id,name,icon,icon_color,background_color",
             "user:id,name,avatar_url",
+            "approvedBy:id,name,avatar_url",
+            "rejectedBy:id,name,avatar_url",
         ]);
 
         if ($role === "member") {

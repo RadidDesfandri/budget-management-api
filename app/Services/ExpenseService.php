@@ -226,10 +226,13 @@ class ExpenseService
                 );
             }
 
+            $userId = Auth::id();
+
             $expense = $this->expenseRepository->update($expense, [
                 "status" => "rejected",
                 "rejected_at" => now(),
                 "rejected_reason" => $data["reason"],
+                "rejected_by" => $userId,
             ]);
 
             return $expense;
