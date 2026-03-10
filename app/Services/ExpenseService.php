@@ -32,7 +32,7 @@ class ExpenseService
         );
     }
 
-    public function getExpense($expense_id, $organization_id)
+    public function getExpense($expense_id, $organization_id, $user_id, $role)
     {
         $expense = $this->expenseRepository->findById(
             $expense_id,
@@ -41,6 +41,10 @@ class ExpenseService
 
         if (!$expense) {
             throw new Exception("Expense not found", 404);
+        }
+
+        if (in_array($role, ["member"]) && $expense->user_id !== $user_id) {
+            throw new Exception("You can only view your own expenses.", 403);
         }
 
         return $expense->load(

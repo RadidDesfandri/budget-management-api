@@ -47,12 +47,22 @@ class ExpenseController extends Controller
         );
     }
 
-    public function show($organization_id, $expense_id)
+    public function show(Request $request, $organization_id, $expense_id)
     {
         try {
+            $user = $request->user();
+            $organization = $user
+                ->organizations()
+                ->where("organizations.id", $organization_id)
+                ->first();
+
+            $role = $organization->pivot->role;
+
             $expense = $this->expenseService->getExpense(
                 $expense_id,
                 $organization_id,
+                $user->id,
+                $role,
             );
 
             return $this->successResponse(
