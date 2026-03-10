@@ -49,15 +49,15 @@ class ExpenseRepository
         }
 
         if (isset($filters["date_from"]) && isset($filters["date_to"])) {
-            $query
-                ->whereBetween("expense_date", [
+            $query->where(function ($q) use ($filters) {
+                $q->whereBetween("expense_date", [
                     $filters["date_from"],
                     $filters["date_to"],
-                ])
-                ->orWhereBetween("created_at", [
+                ])->orWhereBetween("created_at", [
                     $filters["date_from"],
                     $filters["date_to"],
                 ]);
+            });
         }
 
         if (isset($filters["status"])) {
