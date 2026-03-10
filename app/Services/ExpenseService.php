@@ -197,6 +197,9 @@ class ExpenseService
                 "status" => "approved",
                 "approved_at" => now(),
                 "approved_by" => $userId,
+                "rejected_at" => null,
+                "rejected_by" => null,
+                "rejected_reason" => null,
             ]);
 
             return $expense;
@@ -233,6 +236,8 @@ class ExpenseService
                 "rejected_at" => now(),
                 "rejected_reason" => $data["reason"],
                 "rejected_by" => $userId,
+                "approved_at" => null,
+                "approved_by" => null,
             ]);
 
             return $expense;

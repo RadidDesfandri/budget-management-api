@@ -73,7 +73,7 @@ class ExpenseController extends Controller
         $data = $request->validate([
             "title" => "required|string|max:255",
             "amount" => "required|numeric|min:0.01",
-            "description" => "required|string|max:500",
+            "description" => "nullable|string|max:500",
             "expense_date" => "required|date|before_or_equal:today",
             "category_id" => [
                 "required",
@@ -83,7 +83,7 @@ class ExpenseController extends Controller
                     $organization_id,
                 ),
             ],
-            "receipt" => "required|file|mimes:jpg,jpeg,png,pdf|max:5120", // 5MB
+            "receipt" => "nullable|file|mimes:jpg,jpeg,png,pdf|max:5120", // 5MB
         ]);
 
         try {
@@ -113,7 +113,7 @@ class ExpenseController extends Controller
         $data = $request->validate([
             "title" => "sometimes|string|max:255",
             "amount" => "sometimes|numeric|min:0.01",
-            "description" => "sometimes|string|max:500",
+            "description" => "sometimes|nullable|string|max:500",
             "expense_date" => "sometimes|date|before_or_equal:today",
             "category_id" => [
                 "sometimes",
