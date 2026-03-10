@@ -270,10 +270,10 @@ class ExpenseService
             $currentEnd,
         );
 
-        $budgetStats = $this->budgetRepository->getBudgetStats(
+        $budgetStats = $this->budgetRepository->getBudgetStatsByRange(
             $organization_id,
-            $currentStart->year,
-            $currentStart->month,
+            $currentStart,
+            $currentEnd,
         );
 
         $percentChange = 0;
@@ -368,33 +368,35 @@ class ExpenseService
         $label = "this_period";
 
         if ($filter === "7d") {
-            $start = $now->copy()->subDays(7);
-            $end = $now;
+            // 7 hari terakhir
+            $start = $now->copy()->subDays(7)->startOfDay();
+            $end = $now->copy()->endOfDay();
             $pStart = $start->copy()->subDays(7);
-            $pEnd = $start->copy();
+            $pEnd = $start->copy()->subDay()->endOfDay();
             $label = "last_7_days";
         } elseif ($filter === "last_month") {
-            $start = $now->copy()->subMonth()->startOfMonth();
-            $end = $now->copy()->subMonth()->endOfMonth();
-            $pStart = $start->copy()->subMonth();
-            $pEnd = $start->copy()->subDay();
-            $label = "last_month";
+            // 60 hari terakhir
+            $start = $now->copy()->subDays(60)->startOfDay();
+            $end = $now->copy()->endOfDay();
+            $pStart = $start->copy()->subDays(60);
+            $pEnd = $start->copy()->subDay()->endOfDay();
+            $label = "last_60_days";
         } elseif (str_contains($filter, " - ")) {
             // Custom Range: "2026-02-03 - 2026-02-05"
             [$s, $e] = explode(" - ", $filter);
             $start = Carbon::parse($s)->startOfDay();
             $end = Carbon::parse($e)->endOfDay();
-            $diffInDays = $start->diffInDays($end);
+            $diffInDays = $start->diffInDays($end) + 1;
             $pStart = $start->copy()->subDays($diffInDays);
-            $pEnd = $start->copy();
+            $pEnd = $start->copy()->subDay()->endOfDay();
             $label = "custom_range";
         } else {
-            // Default 30d
-            $start = $now->copy()->subDays(30);
-            $end = $now;
-            $pStart = $start->copy()->subDays(30);
-            $pEnd = $start->copy();
-            $label = "last_30_days";
+            // Default 30d = bulan ini, tahun ini
+            $start = $now->copy()->startOfMonth()->startOfDay();
+            $end = $now->copy()->endOfDay();
+            $pStart = $now->copy()->subMonth()->startOfMonth()->startOfDay();
+            $pEnd = $now->copy()->subMonth()->endOfMonth()->endOfDay();
+            $label = "this_month";
         }
 
         return [$start, $end, $pStart, $pEnd, $label];

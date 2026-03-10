@@ -47,10 +47,15 @@ class ExpenseRepository
         }
 
         if (isset($filters["date_from"]) && isset($filters["date_to"])) {
-            $query->whereBetween("expense_date", [
-                $filters["date_from"],
-                $filters["date_to"],
-            ]);
+            $query
+                ->whereBetween("expense_date", [
+                    $filters["date_from"],
+                    $filters["date_to"],
+                ])
+                ->orWhereBetween("created_at", [
+                    $filters["date_from"],
+                    $filters["date_to"],
+                ]);
         }
 
         if (isset($filters["status"])) {
@@ -69,7 +74,7 @@ class ExpenseRepository
             });
         }
 
-        $sortBy = $filters["sort_by"] ?? "expense_date";
+        $sortBy = $filters["sort_by"] ?? "created_at";
         $orderBy = $filters["order_by"] ?? "desc";
         $pageSize = $filters["page_size"] ?? 10;
 
