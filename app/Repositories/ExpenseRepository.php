@@ -34,6 +34,8 @@ class ExpenseRepository
         $query = Expense::where("organization_id", $organization_id)->with([
             "category:id,name,icon,icon_color,background_color",
             "user:id,name,avatar_url",
+            "approvedBy:id,name,avatar_url",
+            "rejectedBy:id,name,avatar_url",
         ]);
 
         if ($role === "member") {
@@ -47,15 +49,15 @@ class ExpenseRepository
         }
 
         if (isset($filters["date_from"]) && isset($filters["date_to"])) {
-            $query
-                ->whereBetween("expense_date", [
+            $query->where(function ($q) use ($filters) {
+                $q->whereBetween("expense_date", [
                     $filters["date_from"],
                     $filters["date_to"],
-                ])
-                ->orWhereBetween("created_at", [
+                ])->orWhereBetween("created_at", [
                     $filters["date_from"],
                     $filters["date_to"],
                 ]);
+            });
         }
 
         if (isset($filters["status"])) {

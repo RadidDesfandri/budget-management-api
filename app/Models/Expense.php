@@ -18,6 +18,7 @@ class Expense extends Model
         "approved_at",
         "rejected_at",
         "rejected_reason",
+        "rejected_by",
         "approved_by",
         "user_id",
         "category_id",
@@ -40,6 +41,16 @@ class Expense extends Model
     public function user()
     {
         return $this->belongsTo(User::class, "user_id");
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, "approved_by");
+    }
+
+    public function rejectedBy()
+    {
+        return $this->belongsTo(User::class, "rejected_by");
     }
 
     public function category()
