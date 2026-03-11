@@ -37,6 +37,7 @@ class BudgetController extends Controller
                 "month" => $monthDate,
                 "category_id" => $validated["category_id"],
                 "organization_id" => $organization_id,
+                "created_by" => $request->user()->id,
             ]);
 
             return $this->successResponse(

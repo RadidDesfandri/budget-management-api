@@ -13,6 +13,7 @@ class Budget extends Model
         "month",
         "category_id",
         "organization_id",
+        "created_by",
     ];
 
     protected $guarded = ["id"];
@@ -37,5 +38,15 @@ class Budget extends Model
     public function expenses()
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, "created_by");
+    }
+
+    public function getMonthFormattedAttribute()
+    {
+        return $this->month->format("Y-m");
     }
 }

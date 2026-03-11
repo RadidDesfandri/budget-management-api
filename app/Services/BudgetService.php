@@ -119,14 +119,11 @@ class BudgetService
                 "budget" => $budget->amount,
                 "used" => $used,
                 "remaining" => $remaining,
-                "category" => [
-                    "id" => $budget->category->id,
-                    "name" => $budget->category->name,
-                    "icon" => $budget->category->icon ?? null,
-                    "icon_color" => $budget->category->icon_color ?? null,
-                    "background_color" =>
-                        $budget->category->background_color ?? null,
-                ],
+                "month" => $budget->month_formatted,
+                "updated_at" => $budget->updated_at,
+                "expenses" => $budget->expenses,
+                "category" => $budget->category,
+                "created_by" => $budget->createdBy->name,
             ];
         });
 
