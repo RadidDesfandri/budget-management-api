@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Category;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CategoryRepository
 {
@@ -28,8 +29,46 @@ class CategoryRepository
         return $category->delete();
     }
 
-    public function allByOrganizationId($organization_id)
+    public function paginateByOrganizationId(
+        $organization_id,
+        array $filters = [],
+    ) {
+        $query = Category::query()
+            ->where("organization_id", $organization_id)
+            ->withCount("expenses");
+
+        if (isset($filters["search"])) {
+            $query->whereRaw("LOWER(name) LIKE ?", [
+                "%" . strtolower($filters["search"]) . "%",
+            ]);
+        }
+
+        $allowedSortBy = [
+            "name" => "name",
+            "created_at" => "created_at",
+            "expenses_count" => "expenses_count",
+        ];
+
+        $sortBy = $filters["sort_by"] ?? "created_at";
+        $sortBy = $allowedSortBy[$sortBy] ?? "created_at";
+
+        $orderBy = strtolower($filters["order_by"] ?? "desc");
+        $orderBy = in_array($orderBy, ["asc", "desc"], true)
+            ? $orderBy
+            : "desc";
+
+        $perPage = (int) ($filters["per_page"] ?? 10);
+        $perPage = max(1, min($perPage, 100));
+
+        return $query->orderBy($sortBy, $orderBy)->paginate($perPage);
+    }
+
+    public function mostActiveByOrganizationId($organization_id)
     {
-        return Category::where("organization_id", $organization_id)->get();
+        return Category::query()
+            ->where("organization_id", $organization_id)
+            ->withCount("expenses")
+            ->orderByDesc("expenses_count")
+            ->first(["id", "name"]);
     }
 }

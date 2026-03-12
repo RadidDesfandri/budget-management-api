@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\CategoryService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
@@ -26,8 +27,9 @@ class CategoryController extends Controller
             "name" => $validated["name"],
             "organization_id" => $organization_id,
             "icon" => $validated["icon"],
-            "icon_color" => $validated["icon_color"],
-            "background_color" => $validated["background_color"],
+            "icon_color" => $validated["icon_color"] ?? "#36454f",
+            "background_color" => $validated["background_color"] ?? "#ade8f4",
+            "created_by" => $request->user()->id,
         ]);
 
         return $this->successResponse(
@@ -40,12 +42,18 @@ class CategoryController extends Controller
     public function update(Request $request, $organization_id, $id)
     {
         $validated = $request->validate([
-            "name" =>
-                "required|string|max:255|unique:categories,name,NULL,id,organization_id," .
-                $organization_id,
-            "icon" => "required|string|max:255",
-            "icon_color" => "nullable|string|max:255",
-            "background_color" => "nullable|string|max:255",
+            "name" => [
+                "sometimes",
+                "string",
+                "max:255",
+                Rule::unique("categories")
+                    ->where("organization_id", $organization_id)
+                    ->ignore($id),
+            ],
+            $organization_id,
+            "icon" => "sometimes|string|max:255",
+            "icon_color" => "sometimes|string|max:255",
+            "background_color" => "sometimes|string|max:255",
         ]);
 
         try {
@@ -86,10 +94,19 @@ class CategoryController extends Controller
         }
     }
 
-    public function allByOrganization($organization_id)
+    public function categoriesOfOrganization(Request $request, $organization_id)
     {
-        $categories = $this->categoryService->allByOrganization(
+        $filters = $request->validate([
+            "page" => "sometimes|integer|min:1",
+            "per_page" => "sometimes|integer|min:1|max:100",
+            "sort_by" => "sometimes|string|in:name,created_at,expenses_count",
+            "order_by" => "sometimes|string|in:asc,desc",
+            "search" => "sometimes|string|max:255",
+        ]);
+
+        $categories = $this->categoryService->categoriesOfOrganization(
             $organization_id,
+            $filters,
         );
 
         return $this->successResponse(
