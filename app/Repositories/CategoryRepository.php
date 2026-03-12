@@ -35,6 +35,7 @@ class CategoryRepository
     ) {
         $query = Category::query()
             ->where("organization_id", $organization_id)
+            ->with(["createdBy:id,name"])
             ->withCount("expenses");
 
         if (isset($filters["search"])) {
