@@ -57,7 +57,7 @@ class CategoryRepository
             ? $orderBy
             : "desc";
 
-        $perPage = (int) ($filters["per_page"] ?? 10);
+        $perPage = (int) ($filters["page_size"] ?? 10);
         $perPage = max(1, min($perPage, 100));
 
         return $query->orderBy($sortBy, $orderBy)->paginate($perPage);

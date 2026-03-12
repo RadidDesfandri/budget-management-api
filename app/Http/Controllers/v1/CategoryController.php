@@ -98,7 +98,7 @@ class CategoryController extends Controller
     {
         $filters = $request->validate([
             "page" => "sometimes|integer|min:1",
-            "per_page" => "sometimes|integer|min:1|max:100",
+            "page_size" => "sometimes|integer|min:1|max:100",
             "sort_by" => "sometimes|string|in:name,created_at,expenses_count",
             "order_by" => "sometimes|string|in:asc,desc",
             "search" => "sometimes|string|max:255",
