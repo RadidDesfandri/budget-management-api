@@ -38,7 +38,32 @@ class BudgetRepository
         return Budget::where("organization_id", $organization_id)
             ->whereYear("month", $year)
             ->whereMonth("month", $month)
-            ->with("category")
+            ->with([
+                "createdBy" => function ($query) {
+                    $query->select("id", "name");
+                },
+                "category" => function ($query) {
+                    $query->select(
+                        "id",
+                        "name",
+                        "icon",
+                        "icon_color",
+                        "background_color",
+                    );
+                },
+                "expenses" => function ($query) {
+                    $query
+                        ->select(
+                            "id",
+                            "budget_id",
+                            "title",
+                            "expense_date",
+                            "amount",
+                        )
+                        ->latest("expense_date")
+                        ->limit(5);
+                },
+            ])
             ->withSum(
                 [
                     "expenses as expenses_sum_amount" => function ($query) {
