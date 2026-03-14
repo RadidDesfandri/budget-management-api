@@ -134,4 +134,24 @@ class ExpenseRepository
 
         return $query->count();
     }
+
+    public function recentExpensesByCategoryIds(
+        $organization_id,
+        array $categoryIds,
+        int $limit = 5,
+    ) {
+        $recentByCategory = [];
+
+        foreach ($categoryIds as $categoryId) {
+            $recentByCategory[$categoryId] = Expense::query()
+                ->where("organization_id", $organization_id)
+                ->where("category_id", $categoryId)
+                ->orderByDesc("expense_date")
+                ->orderByDesc("created_at")
+                ->limit($limit)
+                ->get(["id", "title", "amount", "expense_date"]);
+        }
+
+        return $recentByCategory;
+    }
 }
