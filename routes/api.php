@@ -92,7 +92,7 @@ Route::group(["middleware" => "throttle:api"], function () {
                     Route::prefix("category")->group(function () {
                         Route::get("/", [
                             CategoryController::class,
-                            "allByOrganization",
+                            "categoriesOfOrganization",
                         ]);
 
                         Route::middleware([
