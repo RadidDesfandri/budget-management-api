@@ -16,6 +16,7 @@ class ExpenseService
         protected ExpenseRepository $expenseRepository,
         protected FileStorageService $fileStorageService,
         protected BudgetRepository $budgetRepository,
+        protected AuditTrailService $auditTrailService,
     ) {}
 
     public function getExpenses(
@@ -83,6 +84,20 @@ class ExpenseService
                 ]);
             }
 
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $data["organization_id"],
+                actionType: "expense_created",
+                description: "Created expense \"{$expense->title}\" — with amount Rp " .
+                    number_format((float) $expense->amount, 0, ",", "."),
+                metadata: [
+                    "expense_id" => $expense->id,
+                    "title" => $expense->title,
+                    "amount" => $expense->amount,
+                    "category_id" => $expense->category_id,
+                ],
+            );
+
             return $expense;
         });
     }
@@ -145,7 +160,50 @@ class ExpenseService
                 );
             }
 
-            return $this->expenseRepository->update($expense, $data);
+            $oldTitle = $expense->title;
+            $oldAmount = $expense->amount;
+            $oldCategoryId = $expense->category_id;
+            
+            $expense = $this->expenseRepository->update($expense, $data);
+
+            $changes = [];
+            if (isset($data["title"]) && $data["title"] !== $oldTitle) {
+                $changes[] = "renamed to \"{$data['title']}\"";
+            }
+            if (isset($data["amount"]) && $data["amount"] != $oldAmount) {
+                $changes[] = "changed amount to Rp " . number_format($data['amount'], 0, ",", ".");
+            }
+            if (isset($data["category_id"]) && $data["category_id"] != $oldCategoryId) {
+                $changes[] = "changed category to ID {$data['category_id']}";
+            }
+
+            if (!empty($changes) || $receipt) {
+                $descriptionSuffix = !empty($changes) ? " — " . implode(", ", $changes) : "";
+                if ($receipt) {
+                    $descriptionSuffix .= ($descriptionSuffix ? " and " : " — ") . "updated receipt";
+                }
+                
+                $this->auditTrailService->logFromRequest(
+                    request: request(),
+                    organizationId: (int) $organization_id,
+                    actionType: "expense_updated",
+                    description: "Updated expense \"{$oldTitle}\"{$descriptionSuffix}",
+                    metadata: array_merge(
+                        ["expense_id" => (int) $expense_id],
+                        array_filter(
+                            $data,
+                            fn($key) => in_array($key, [
+                                "title",
+                                "amount",
+                                "category_id",
+                            ]),
+                            ARRAY_FILTER_USE_KEY,
+                        ),
+                    ),
+                );
+            }
+
+            return $expense;
         });
     }
 
@@ -172,7 +230,20 @@ class ExpenseService
                 $this->fileStorageService->deleteFile($expense->receipt_url);
             }
 
-            return $this->expenseRepository->delete($expense);
+            $title = $expense->title;
+            $result = $this->expenseRepository->delete($expense);
+
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $organization_id,
+                actionType: "expense_deleted",
+                description: "Deleted expense (ID: {$expense_id}) \"{$title}\"",
+                metadata: [
+                    "expense_id" => (int) $expense_id,
+                ],
+            );
+
+            return $result;
         });
     }
 
@@ -205,6 +276,17 @@ class ExpenseService
                 "rejected_by" => null,
                 "rejected_reason" => null,
             ]);
+
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $organization_id,
+                actionType: "expense_approved",
+                description: "Approved expense \"{$expense->title}\"",
+                metadata: [
+                    "expense_id" => (int) $expense_id,
+                    "amount" => $expense->amount,
+                ],
+            );
 
             return $expense;
         });
@@ -243,6 +325,17 @@ class ExpenseService
                 "approved_at" => null,
                 "approved_by" => null,
             ]);
+
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $organization_id,
+                actionType: "expense_rejected",
+                description: "Rejected expense \"{$expense->title}\" — reason: {$data["reason"]}",
+                metadata: [
+                    "expense_id" => (int) $expense_id,
+                    "reason" => $data["reason"],
+                ],
+            );
 
             return $expense;
         });

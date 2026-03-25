@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\v1\AuditTrailController;
 use App\Http\Controllers\v1\BudgetController;
 use App\Http\Controllers\v1\CategoryController;
 use App\Http\Controllers\v1\AuthController;
@@ -181,6 +182,19 @@ Route::group(["middleware" => "throttle:api"], function () {
                             ]);
                         });
                     });
+
+                    Route::middleware(["org.role:owner,admin"])->group(
+                        function () {
+                            Route::get("audit-trails", [
+                                AuditTrailController::class,
+                                "index",
+                            ]);
+                            Route::get("audit-trails/action-types", [
+                                AuditTrailController::class,
+                                "actionTypes",
+                            ]);
+                        },
+                    );
                 });
         });
 

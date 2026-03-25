@@ -16,6 +16,7 @@ class OrganizationService
         protected OrganizationUserRepository $organizationUserRepo,
         protected FileStorageService $fileStorage,
         protected InvitationRepository $invitationRepo,
+        protected AuditTrailService $auditTrailService,
     ) {}
 
     public function detail($organizationId)
@@ -144,6 +145,16 @@ class OrganizationService
 
         $this->organizationUserRepo->delete($organizationUser);
 
+        $this->auditTrailService->logFromRequest(
+            request: request(),
+            organizationId: (int) $organizationId,
+            actionType: "member_removed",
+            description: "Removed member (user ID: {$userId}) from the organization",
+            metadata: [
+                "member_id" => (int) $userId,
+            ],
+        );
+
         return true;
     }
 
@@ -166,10 +177,28 @@ class OrganizationService
             throw new Exception("Owner cannot be changed", 403);
         }
 
+        $oldRole = $organizationUser->role;
         $this->organizationUserRepo->update($organizationUser, [
             "role" => $role,
         ]);
 
+        $this->auditTrailService->logFromRequest(
+            request: request(),
+            organizationId: (int) $organizationId,
+            actionType: "member_role_updated",
+            description: "Updated member (user ID: {$userId}) role from {$oldRole} to {$role}",
+            metadata: [
+                "member_id" => (int) $userId,
+                "old_role" => $oldRole,
+                "new_role" => $role,
+            ],
+        );
+
         return true;
+    }
+
+    public function getMemberRole($organizationId, $userId)
+    {
+        return $this->organizationUserRepo->getMember($organizationId, $userId);
     }
 }

@@ -16,6 +16,7 @@ class InvitationService
     public function __construct(
         protected InvitationRepository $invitationRepo,
         protected OrganizationUserRepository $organizationUserRepo,
+        protected AuditTrailService $auditTrailService,
     ) {}
 
     public function createInvitation(array $data, $organizationId, $user)
@@ -67,6 +68,19 @@ class InvitationService
 
             Mail::to($data["email"])->send(
                 new InvitationMail($invitation, $organization, $frontendUrl),
+            );
+
+            $role = ucfirst($data["role"]);
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $organizationId,
+                actionType: "member_invited",
+                description: "Invited {$data["email"]} to join organization as {$role}",
+                metadata: [
+                    "invitation_id" => $invitation->id,
+                    "email" => $data["email"],
+                    "role" => $data["role"],
+                ],
             );
 
             return $invitation;
@@ -136,6 +150,19 @@ class InvitationService
                 "joined_at" => Carbon::now(),
             ]);
 
+            $role = ucfirst($invitation->role);
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $invitation->organization_id,
+                actionType: "invitation_accepted",
+                description: "{$invitation->email} accepted invitation to join organization as {$role}",
+                metadata: [
+                    "invitation_id" => $invitation->id,
+                    "email" => $invitation->email,
+                    "role" => $invitation->role,
+                ],
+            );
+
             return $invitation;
         });
     }
@@ -165,6 +192,19 @@ class InvitationService
             $this->invitationRepo->update($invitation, [
                 "rejected_at" => Carbon::now(),
             ]);
+
+            $role = ucfirst($invitation->role);
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $invitation->organization_id,
+                actionType: "invitation_rejected",
+                description: "{$invitation->email} rejected invitation to join organization as {$role}",
+                metadata: [
+                    "invitation_id" => $invitation->id,
+                    "email" => $invitation->email,
+                    "role" => $invitation->role,
+                ],
+            );
 
             return $invitation;
         });
