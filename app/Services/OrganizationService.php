@@ -131,15 +131,15 @@ class OrganizationService
         );
 
         if (!$organizationUser) {
-            throw new Exception("Member not found");
+            throw new Exception("Member not found", 404);
         }
 
         if ($organizationUser->user_id === $user->id) {
-            throw new Exception("You cannot delete yourself");
+            throw new Exception("You cannot delete yourself", 403);
         }
 
         if ($organizationUser->role === OrganizationUser::ROLE_OWNER) {
-            throw new Exception("Owner cannot be deleted");
+            throw new Exception("Owner cannot be deleted", 403);
         }
 
         $this->organizationUserRepo->delete($organizationUser);
@@ -155,15 +155,15 @@ class OrganizationService
         );
 
         if (!$organizationUser) {
-            throw new Exception("Member not found");
+            throw new Exception("Member not found", 404);
         }
 
         if ($organizationUser->user_id === $user->id) {
-            throw new Exception("You cannot change your role");
+            throw new Exception("You cannot change your role", 403);
         }
 
         if ($organizationUser->role === OrganizationUser::ROLE_OWNER) {
-            throw new Exception("Owner cannot be changed");
+            throw new Exception("Owner cannot be changed", 403);
         }
 
         $this->organizationUserRepo->update($organizationUser, [

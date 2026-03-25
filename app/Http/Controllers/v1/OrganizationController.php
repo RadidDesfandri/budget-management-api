@@ -100,17 +100,28 @@ class OrganizationController extends Controller
 
     public function changeRole(Request $request, $organization_id, $user_id)
     {
-        $request->validate([
-            "role" => "required|in:admin,finance,member",
-        ]);
+        try {
+            $request->validate([
+                "role" => "required|in:admin,finance,member",
+            ]);
 
-        $this->organizationService->changeRole(
-            $request->user(),
-            $organization_id,
-            $user_id,
-            $request->role,
-        );
+            $this->organizationService->changeRole(
+                $request->user(),
+                $organization_id,
+                $user_id,
+                $request->role,
+            );
 
-        return $this->successResponse("Role changed successfully", null, 200);
+            return $this->successResponse(
+                "Role changed successfully",
+                null,
+                200,
+            );
+        } catch (Exception $e) {
+            $code = $e->getCode() ?: 500;
+            $httpCode = $code >= 200 && $code <= 599 ? $code : 500;
+
+            return $this->errorResponse($e->getMessage(), null, $httpCode);
+        }
     }
 }
