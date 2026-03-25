@@ -13,6 +13,7 @@ class BudgetService
     public function __construct(
         protected BudgetRepository $budgetRepository,
         protected ExpenseRepository $expenseRepository,
+        protected AuditTrailService $auditTrailService,
     ) {}
 
     public function create(array $data)
@@ -42,7 +43,21 @@ class BudgetService
                 $date->month,
             );
 
-            return $budget;
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $data["organization_id"],
+                actionType: "budget_created",
+                description: "Created a new budget for \"{$budget->category->name}\" with amount Rp " .
+                    number_format($data["amount"], 0, ",", "."),
+                metadata: [
+                    "budget_id" => $budget->id,
+                    "category_id" => $data["category_id"],
+                    "amount" => $data["amount"],
+                    "month" => $data["month"],
+                ],
+            );
+
+            return $budget->load("category");
         });
     }
 
@@ -67,7 +82,41 @@ class BudgetService
             );
         }
 
+        $oldAmount = $budget->amount;
+        $oldMonth = $budget->month_formatted;
+        $oldCategoryId = $budget->category_id;
+
         $this->budgetRepository->update($budget, $data);
+
+        $changes = [];
+        if (isset($data["amount"]) && $data["amount"] != $oldAmount) {
+            $changes[] =
+                "changed amount to Rp " .
+                number_format($data["amount"], 0, ",", ".");
+        }
+        if (
+            isset($data["month"]) &&
+            rtrim($data["month"], "-01") !== rtrim($oldMonth, "-01")
+        ) {
+            $changes[] = "changed month to " . rtrim($data["month"], "-01");
+        }
+        if (
+            isset($data["category_id"]) &&
+            $data["category_id"] != $oldCategoryId
+        ) {
+            $changes[] = "changed category to ID {$data["category_id"]}";
+        }
+
+        if (!empty($changes)) {
+            $descriptionSuffix = " — " . implode(", ", $changes);
+            $this->auditTrailService->logFromRequest(
+                request: request(),
+                organizationId: (int) $organizationId,
+                actionType: "budget_updated",
+                description: "Updated budget (ID: {$id}){$descriptionSuffix}",
+                metadata: array_merge(["budget_id" => (int) $id], $data),
+            );
+        }
 
         return $budget;
     }
@@ -80,7 +129,19 @@ class BudgetService
             throw new Exception("Budget not found", 404);
         }
 
-        return $this->budgetRepository->delete($budget);
+        $result = $this->budgetRepository->delete($budget);
+
+        $this->auditTrailService->logFromRequest(
+            request: request(),
+            organizationId: (int) $organizationId,
+            actionType: "budget_deleted",
+            description: "Deleted budget (ID: {$id})",
+            metadata: [
+                "budget_id" => (int) $id,
+            ],
+        );
+
+        return $result;
     }
 
     public function findById($id, $organizationId)
